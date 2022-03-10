@@ -12,7 +12,9 @@ def random_splits(data, A, B):
     valid_indeces = []
     test_indeces = []
     #print(class_masks[0].shape)
+
     ind = 0
+    
     for class_mask in class_masks:
         class_mask = set(class_mask)
         add_to_train = set(random.sample(class_mask, k=A))
@@ -42,6 +44,18 @@ def random_splits(data, A, B):
     data.test_mask = test_mask
     
     return data
+
+
+
+        
+
+    '''embedding = embeddings[i]
+    neighbour_idxs = []
+    # this is extremely inefficient
+    for connection in data.edge_index.T:
+        if connection[0] == i:
+            neighbour_idxs.append(connection[1])'''
+    pass
 
 
 def propagate(data, embeddings):
