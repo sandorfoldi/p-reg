@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 
+import random
+
 
 def train0(model, data, lr=0.01, weight_decay=5e-4, num_epochs=200):
     # training the model
@@ -19,11 +21,10 @@ def train0(model, data, lr=0.01, weight_decay=5e-4, num_epochs=200):
 
 
 def train1(model, data, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
-    # training the model
-    A = compute_a(data)
-    D = torch.diag(A.sum(dim=0))
-    A_hat = D.inverse()@A
+    # A_hat is the normalized adjacency matrix, needed for preg
+    A_hat = compute_a_hat(data)
 
+    # training the model
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     model.train()
@@ -34,6 +35,7 @@ def train1(model, data, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
             p=out, # we make predictions on the entire dataset
             t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
             train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
+            preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
             A_hat=A_hat, 
             mu=mu)
         loss.backward()
@@ -42,16 +44,44 @@ def train1(model, data, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
     return model # not sure if inplace would work
 
 
-def compute_a(data):
+def train2(model, data, preg_mask, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
+    # A_hat is the normalized adjacency matrix, needed for preg
+    A_hat = compute_a_hat(data)
+
+    # training the model
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    model.train()
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
+        out = model(data)
+        loss = reg_loss(
+            p=out, # we make predictions on the entire dataset
+            t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
+            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
+            preg_mask=preg_mask,
+            A_hat=A_hat, 
+            mu=mu)
+        loss.backward()
+        optimizer.step()
+    
+    return model # not sure if inplace would work
+
+
+def compute_a_hat(data):
+    """ Compute the A_hat, the normalized adjacency matrix, as in the paper"""
     a = torch.zeros(data.x.shape[0], data.x.shape[0])
 
     for i in data.edge_index.T:
         a[i[0], i[1]] = 1
+        a[i[1], i[0]] = 1
+    
+    d = torch.diag(a.sum(dim=0))
+    a_hat = d.inverse()@a
+    return a_hat
 
-    return a
 
-
-def reg_loss(p, t, train_mask, A_hat, mu=0.2, phi='ce'):
+def reg_loss(p, t, train_mask, preg_mask, A_hat, mu=0.2, phi='ce'):
     """
     Regularization loss
     float tensor[N,C] p: predictions on the entire dataset
@@ -61,14 +91,14 @@ def reg_loss(p, t, train_mask, A_hat, mu=0.2, phi='ce'):
     float mu: regularization factor
     """
 
-    L_1 = F.cross_entropy(p[train_mask], t)
+    L_cls = F.cross_entropy(p[train_mask], t)
 
     if phi == 'ce':
-        L_2 = F.cross_entropy(p, A_hat@p)
+        L_preg = F.cross_entropy(p[preg_mask], (A_hat@p)[preg_mask])
     elif phi == 'l2':
-        L_2 = F.mse_loss(p, A_hat@p)
+        L_preg = F.mse_loss(p[preg_mask], (A_hat@p)[preg_mask])
     elif phi == 'kld':
-        L_2 = F.kl_div(p, A_hat@p)
+        L_preg = F.kl_div(p[preg_mask], (A_hat@p)[preg_mask])
     else:
         raise ValueError('phi must be one of ce (cross_entropy), l2 (squared error) or kld (kullback-leibler divergence)')
 
@@ -76,7 +106,7 @@ def reg_loss(p, t, train_mask, A_hat, mu=0.2, phi='ce'):
     M = train_mask.sum()
     N = train_mask.shape[0]
 
-    return 1 / M * L_1 + mu / N * L_2
+    return 1 / M * L_cls + mu / N * L_preg
 
 
 def set_masks(data, split):
@@ -98,5 +128,47 @@ def set_masks(data, split):
     data.test_mask = torch.concat([
         torch.zeros(train_size + valid_size, dtype=torch.bool),
         torch.ones(test_size, dtype=torch.bool),])
+    
+    return data
+
+
+def random_splits(data, A, B):
+    class_names = torch.unique(data.y)
+    class_masks = [(data.y == classname).nonzero(as_tuple=False).numpy().reshape(-1).tolist() for classname in class_names]
+
+    train_indeces = []
+    valid_indeces = []
+    test_indeces = []
+    #print(class_masks[0].shape)
+
+    ind = 0
+    
+    for class_mask in class_masks:
+        class_mask = set(class_mask)
+        add_to_train = set(random.sample(class_mask, k=A))
+        class_mask -= add_to_train
+        add_to_valid = set(random.sample(class_mask, k=B))
+        class_mask -= add_to_valid
+        add_to_test = class_mask
+        train_indeces += add_to_train
+        valid_indeces += add_to_valid
+        test_indeces += add_to_test
+        ind += 1
+
+    train_mask = torch.zeros(len(data.y), dtype=torch.bool)
+    for i in train_indeces:
+        train_mask[i] = True
+
+    valid_mask = torch.zeros(len(data.y), dtype=torch.bool)
+    for i in valid_indeces:
+        valid_mask[i] = True
+
+    test_mask = torch.zeros(len(data.y), dtype=torch.bool)
+    for i in test_indeces:
+        test_mask[i] = True
+    
+    data.train_mask = train_mask
+    data.valid_mask = valid_mask
+    data.test_mask = test_mask
     
     return data
