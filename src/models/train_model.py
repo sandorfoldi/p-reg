@@ -109,29 +109,6 @@ def reg_loss(p, t, train_mask, preg_mask, A_hat, mu=0.2, phi='ce'):
     return 1 / M * L_cls + mu / N * L_preg
 
 
-def set_masks(data, split):
-    train_size = split[0]
-    valid_size = split[1]
-    test_size = split[2]
-
-    assert sum([train_size, valid_size, test_size]) == 2708
-
-    data.train_mask = torch.concat([
-        torch.ones(train_size, dtype=torch.bool),
-        torch.zeros(valid_size + test_size, dtype=torch.bool),])
-
-    data.valid_mask = torch.concat([
-        torch.zeros(train_size, dtype=torch.bool),
-        torch.ones(valid_size, dtype=torch.bool),
-        torch.zeros(test_size, dtype=torch.bool),])
-
-    data.test_mask = torch.concat([
-        torch.zeros(train_size + valid_size, dtype=torch.bool),
-        torch.ones(test_size, dtype=torch.bool),])
-    
-    return data
-
-
 def random_splits(data, A, B):
     class_names = torch.unique(data.y)
     class_masks = [(data.y == classname).nonzero(as_tuple=False).numpy().reshape(-1).tolist() for classname in class_names]
