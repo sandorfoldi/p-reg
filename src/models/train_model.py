@@ -5,6 +5,7 @@ import random
 
 
 def train0(model, data, lr=0.01, weight_decay=5e-4, num_epochs=200):
+    """ Train model with no preg, nll loss"""
     # training the model
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -20,7 +21,13 @@ def train0(model, data, lr=0.01, weight_decay=5e-4, num_epochs=200):
     return model # not sure if inplace would work
 
 
-def train1(model, data, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
+def train1(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
+    """ Train model with preg, ce loss"""
+
+    # If no preg mask is given, use the entire dataset
+    if preg_mask is None:
+        preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool)
+
     # A_hat is the normalized adjacency matrix, needed for preg
     A_hat = compute_a_hat(data)
 
@@ -36,30 +43,6 @@ def train1(model, data, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
             t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
             train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
             preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
-            A_hat=A_hat, 
-            mu=mu)
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
-
-
-def train2(model, data, preg_mask, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
-    # A_hat is the normalized adjacency matrix, needed for preg
-    A_hat = compute_a_hat(data)
-
-    # training the model
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    model.train()
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-        out = model(data)
-        loss = reg_loss(
-            p=out, # we make predictions on the entire dataset
-            t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
-            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
-            preg_mask=preg_mask,
             A_hat=A_hat, 
             mu=mu)
         loss.backward()
@@ -110,6 +93,12 @@ def reg_loss(p, t, train_mask, preg_mask, A_hat, mu=0.2, phi='ce'):
 
 
 def random_splits(data, A, B):
+    """
+    Modify data.train_mask, data.valid_mask and data.test_mask
+    So that there will be exactly A number of samples of each class in the train_mask
+    Exactly B number of samples of each class in the valid_mask
+    And the rest in the test mask
+    """
     class_names = torch.unique(data.y)
     class_masks = [(data.y == classname).nonzero(as_tuple=False).numpy().reshape(-1).tolist() for classname in class_names]
 
