@@ -27,7 +27,6 @@ class GCN1(torch.nn.Module):
         self.conv2 = GCNConv(64, num_classes, cached=True)
 
     def forward(self, data):
-        self.train()
         x, edge_index = data.x, data.edge_index
 
         x = self.conv1(x, edge_index)
@@ -35,17 +34,4 @@ class GCN1(torch.nn.Module):
         x = F.dropout(x, training=self.training)
         x = self.conv2(x, edge_index)
 
-        return F.softmax(x, dim=1)
-
-
-    def propagate(self, data, A_hat):
-        self.eval()
-        x, edge_index = data.x, data.edge_index
-
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)
-
-        return F.softmax(A_hat@x, dim=1)
-
+        return x

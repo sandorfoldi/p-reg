@@ -4,56 +4,8 @@ import torch.nn.functional as F
 import random
 
 
-def train0(model, data, lr=0.01, weight_decay=5e-4, num_epochs=200):
-    """ Train model with no preg, nll loss"""
-    # training the model
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    model.train()
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-        out = model(data)
-        loss = F.nll_loss(out[data.train_mask], data.y[data.train_mask])
-        # print(loss)
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
-
-
-def train1(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
-    """ Train model with preg, ce loss"""
-
-    # If no preg mask is given, use the entire dataset
-    if preg_mask is None:
-        preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool)
-
-    # A_hat is the normalized adjacency matrix, needed for preg
-    A_hat = compute_a_hat(data)
-
-    # training the model
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    model.train()
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-        out = model(data)
-        loss = reg_loss(
-            p=out, # we make predictions on the entire dataset
-            t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
-            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
-            preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
-            A_hat=A_hat, 
-            mu=mu)
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
-
-
-
 def train2(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
-    """ Train model with preg, ce loss"""
+    """ Train model"""
 
     # If no preg mask is given, use the entire dataset
     if preg_mask is None:
@@ -70,11 +22,11 @@ def train2(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=1
         optimizer.zero_grad()
 
         pred = model(data)
-        prop = model.propagate(data, A_hat)
+        prop = A_hat@pred
         
         loss = reg_loss_2(
-            pred=pred, # we make predictions on the entire dataset
-            prop=prop,
+            pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
+            prop=F.softmax(prop, dim=1),
             t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
             train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
             preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
@@ -83,6 +35,8 @@ def train2(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=1
             L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
             L_preg=lambda x, y: F.cross_entropy(x, y),
             )
+        '''if epoch % 100 == 0:
+            print(loss.item())'''
         loss.backward()
         optimizer.step()
     
@@ -103,63 +57,6 @@ def compute_a_hat(data):
     return a_hat
 
 
-def reg_loss(p, t, train_mask, preg_mask, A_hat, mu=0.2, phi='ce'):
-    """
-    Regularization loss
-    float tensor[N,C] p: predictions on the entire dataset
-    int tensor[M] t: list of ground-truth class indeces for the training nodes
-    bool tensor[N] train_mask: bool map for selecting the training nodes from the entire dataset
-    bool tensor A_hat[N, N]: adjacency matrix for the entire dataset
-    float mu: regularization factor
-    """
-
-    L_cls = F.cross_entropy(p[train_mask], t)
-
-    if phi == 'ce':
-        L_preg = F.cross_entropy(p[preg_mask], (A_hat@p)[preg_mask])
-    elif phi == 'l2':
-        L_preg = F.mse_loss(p[preg_mask], (A_hat@p)[preg_mask])
-    elif phi == 'kld':
-        L_preg = F.kl_div(p[preg_mask], (A_hat@p)[preg_mask])
-    else:
-        raise ValueError('phi must be one of ce (cross_entropy), l2 (squared error) or kld (kullback-leibler divergence)')
-
-    
-    M = train_mask.sum()
-    N = train_mask.shape[0]
-
-    return 1 / M * L_cls + mu / N * L_preg
-
-
-def reg_loss_1(pred, prop, t, train_mask, preg_mask, A_hat, mu=0.2, phi='ce'):
-    """
-    Regularization loss
-    float tensor[N,C] pred: predictions on the entire dataset
-    float tensor[N,C] prop: propagated node values on the entire dataset
-    int tensor[M] t: list of ground-truth class indeces for the training nodes
-    bool tensor[N] train_mask: bool map for selecting the training nodes from the entire dataset
-    bool tensor A_hat[N, N]: adjacency matrix for the entire dataset
-    float mu: regularization factor
-    """
-
-    L_cls = F.cross_entropy(pred[train_mask], t)
-
-    if phi == 'ce':
-        L_preg = F.cross_entropy(pred[preg_mask], prop[preg_mask])
-    elif phi == 'l2':
-        L_preg = F.mse_loss(pred[preg_mask], prop[preg_mask])
-    elif phi == 'kld':
-        L_preg = F.kl_div(pred[preg_mask], prop[preg_mask])
-    else:
-        raise ValueError('phi must be one of ce (cross_entropy), l2 (squared error) or kld (kullback-leibler divergence)')
-
-    
-    M = train_mask.sum()
-    N = train_mask.shape[0]
-
-    return 1 / M * L_cls + mu / N * L_preg
-
-
 def reg_loss_2(pred, prop, t, train_mask, preg_mask, A_hat, L_cls, L_preg, mu=0.2, phi='ce'):
     """
     Regularization loss
@@ -178,7 +75,8 @@ def reg_loss_2(pred, prop, t, train_mask, preg_mask, A_hat, L_cls, L_preg, mu=0.
         
     M = train_mask.sum()
     N = train_mask.shape[0]
-
+    M = 1
+    N = 1
     return 1 / M * L_cls + mu / N * L_preg
 
 
