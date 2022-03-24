@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import random
 
 
-def train2(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
+def train(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
     """ Train model"""
 
     # If no preg mask is given, use the entire dataset
@@ -15,28 +15,28 @@ def train2(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=1
     A_hat = compute_a_hat(data)
 
     # training the model
+    # initializing the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
+    # setting model to train mode
     model.train()
+
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
         pred = model(data)
         prop = A_hat@pred
         
-        loss = reg_loss_2(
+        loss = reg_loss(
             pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
-            prop=F.softmax(prop, dim=1),
-            t=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
+            prop=F.softmax(prop, dim=1), # 
+            target=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
             train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
             preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
-            A_hat=A_hat, 
-            mu=mu,
             L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
             L_preg=lambda x, y: F.cross_entropy(x, y),
+            mu=mu,
             )
-        '''if epoch % 100 == 0:
-            print(loss.item())'''
+
         loss.backward()
         optimizer.step()
     
@@ -57,26 +57,32 @@ def compute_a_hat(data):
     return a_hat
 
 
-def reg_loss_2(pred, prop, t, train_mask, preg_mask, A_hat, L_cls, L_preg, mu=0.2, phi='ce'):
+def reg_loss(pred, prop, target, train_mask, preg_mask, L_cls, L_preg, mu=0.2, phi='ce'):
     """
     Regularization loss
+    Arguments:
     float tensor[N,C] pred: predictions on the entire dataset
     float tensor[N,C] prop: propagated node values on the entire dataset
-    int tensor[M] t: list of ground-truth class indeces for the training nodes
+    int tensor[M] target: list of ground-truth class indeces for the training nodes
     bool tensor[N] train_mask: bool map for selecting the training nodes from the entire dataset
-    bool tensor A_hat[N, N]: adjacency matrix for the entire dataset
+    bool tensor[N] preg_mask: book map for selecting the nodes to compute regularization loss on
     float mu: regularization factor
     func L_cls(pred[train_mask], t): classification loss function
     func L_preg(pred[preg_mask], prop[preg_mask]): preg loss function
     """
 
-    L_cls = L_cls(pred[train_mask], t)
+    L_cls = L_cls(pred[train_mask], target)
     L_preg = L_preg(pred[preg_mask], prop[preg_mask])
-        
-    M = train_mask.sum()
-    N = train_mask.shape[0]
+
+    # Setting M!=0 and N!=0 messes up training entirely
+    # Instead, we normalize the dataset, not totally sure if this makes sense though
+    #     
+    # M = train_mask.sum()
+    # N = train_mask.shape[0]
+
     M = 1
     N = 1
+
     return 1 / M * L_cls + mu / N * L_preg
 
 
@@ -93,7 +99,6 @@ def random_splits(data, A, B):
     train_indeces = []
     valid_indeces = []
     test_indeces = []
-    #print(class_masks[0].shape)
 
     ind = 0
     
