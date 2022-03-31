@@ -1,5 +1,8 @@
 import torch
 import torch.nn.functional as F
+import torch_geometric.utils as utils
+
+
 
 import random
 
@@ -55,6 +58,23 @@ def compute_a_hat(data):
     d = torch.diag(a.sum(dim=0))
     a_hat = d.inverse()@a
     return a_hat
+
+
+def A_hat_computations(data):
+    """ 
+    """
+    edge_index = data.edge_index
+    edge_index, _ =  utils.remove_self_loops(edge_index)
+    edge_index, _, A_hat_mask = utils.remove_isolated_nodes(edge_index)
+
+    A = utils.to_dense_adj(edge_index).squeeze()
+    D = torch.diag(utils.degree(edge_index[0]))
+
+    A_hat = torch.linalg.solve(D, A)
+    A_hat.requires_grad = False
+    N = A_hat.shape[0]
+
+    return A_hat, A_hat_mask, N
 
 
 def reg_loss(pred, prop, target, train_mask, preg_mask, L_cls, L_preg, mu=0.2, phi='ce'):
@@ -131,3 +151,29 @@ def random_splits(data, A, B):
     data.test_mask = test_mask
     
     return data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

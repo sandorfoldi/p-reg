@@ -15,7 +15,7 @@ class GAT(torch.nn.Module):
     ''' GAT '''
     def __init__(self, dataset, hidden_channels=16):
         super().__init__()
-        torch.manual_seed(_SEED_)
+        # torch.manual_seed(_SEED_)
         self.conv1 = GATConv(dataset.num_features, hidden_channels, heads=8, dropout=0.6)
         self.conv2 = GATConv(8 * hidden_channels, dataset.num_classes,  heads=1, dropout=0.6)  
 
