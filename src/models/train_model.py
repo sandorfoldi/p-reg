@@ -94,9 +94,9 @@ def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
-        pred = model(data)[data.train_mask]
+        Z = model(data)
 
-        loss = loss_fn(data, pred)
+        loss = loss_fn(data, Z)
 
         loss.backward()
         optimizer.step()
