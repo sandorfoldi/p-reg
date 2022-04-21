@@ -12,14 +12,14 @@ def evaluate1(model, data):
     pred = model(data).argmax(dim=1)
 
     tp_train = (pred[data.train_mask] == data.y[data.train_mask]).sum()
-    tp_valid = (pred[data.valid_mask] == data.y[data.valid_mask]).sum()
+    tp_val = (pred[data.val_mask] == data.y[data.val_mask]).sum()
     tp_test = (pred[data.test_mask] == data.y[data.test_mask]).sum()
 
     acc_train = int(tp_train) / int(data.train_mask.sum())
-    acc_valid = int(tp_valid) / int(data.valid_mask.sum())
+    acc_val = int(tp_val) / int(data.val_mask.sum())
     acc_test = int(tp_test) / int(data.test_mask.sum())
 
-    return acc_train, acc_valid, acc_test
+    return acc_train, acc_val, acc_test
 
 
 def test(model, data, splits):

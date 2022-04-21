@@ -144,7 +144,7 @@ def random_splits(data, A, B):
         test_mask[i] = True
     
     data.train_mask = train_mask
-    data.valid_mask = valid_mask
+    data.val_mask = valid_mask
     data.test_mask = test_mask
     
     return data
