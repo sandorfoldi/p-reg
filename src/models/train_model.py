@@ -2,6 +2,10 @@ import torch
 import torch.nn.functional as F
 import torch_geometric.utils as utils
 
+from src.models.reg import compute_a_hat
+from src.models.reg import reg_loss
+from src.models.reg import cp_reg
+
 
 
 import random
@@ -46,65 +50,58 @@ def train(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=10
     return model # not sure if inplace would work
 
 
-def compute_a_hat(data):
-    """ Compute the A_hat, the normalized adjacency matrix, as in the paper"""
-    a = torch.zeros(data.x.shape[0], data.x.shape[0])
+def train_conf_pen(model, data, conf_pen_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
+    """ Train model"""
 
-    for i in data.edge_index.T:
-        if i[0] != i[1]:
-            a[i[0], i[1]] = 1
-            a[i[1], i[0]] = 1
+    # training the model
+    # initializing the optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # setting model to train mode
+    model.train()
+
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
+
+        pred = model(data)
+        
+        loss = cp_reg(
+            pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
+            target=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
+            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
+            conf_pen_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
+            L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
+            beta=beta,
+            )
+
+        loss.backward()
+        optimizer.step()
     
-    d = torch.diag(a.sum(dim=0))
-    a_hat = d.inverse()@a
-    return a_hat
+    return model # not sure if inplace would work
 
 
-def A_hat_computations(data):
+def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
     """ 
-    """
-    edge_index = data.edge_index
-    edge_index, _ =  utils.remove_self_loops(edge_index)
-    edge_index, _, A_hat_mask = utils.remove_isolated_nodes(edge_index)
+    Train model using given loss function
+    Loss function must have the following structure:
+    def loss(data: from torch_geometric.data import Data, pred: torch.tensor([num_nodes, num_classes])) -> scalar value
 
-    A = utils.to_dense_adj(edge_index).squeeze()
-    D = torch.diag(utils.degree(edge_index[0]))
-
-    A_hat = torch.linalg.solve(D, A)
-    A_hat.requires_grad = False
-    N = A_hat.shape[0]
-
-    return A_hat, A_hat_mask, N
-
-
-def reg_loss(pred, prop, target, train_mask, preg_mask, L_cls, L_preg, mu=0.2, phi='ce'):
-    """
-    Regularization loss
-    Arguments:
-    float tensor[N,C] pred: predictions on the entire dataset
-    float tensor[N,C] prop: propagated node values on the entire dataset
-    int tensor[M] target: list of ground-truth class indeces for the training nodes
-    bool tensor[N] train_mask: bool map for selecting the training nodes from the entire dataset
-    bool tensor[N] preg_mask: book map for selecting the nodes to compute regularization loss on
-    float mu: regularization factor
-    func L_cls(pred[train_mask], t): classification loss function
-    func L_preg(pred[preg_mask], prop[preg_mask]): preg loss function
     """
 
-    L_cls = L_cls(pred[train_mask], target)
-    L_preg = L_preg(pred[preg_mask], prop[preg_mask])
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    # Setting M!=0 and N!=0 messes up training entirely
-    # Instead, we normalize the dataset, not totally sure if this makes sense though
-    #     
-    # M = train_mask.sum()
-    # N = train_mask.shape[0]
+    model.train()
 
-    M = 1
-    N = 1
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
 
-    return 1 / M * L_cls + mu / N * L_preg
+        Z = model(data)
 
+        loss = loss_fn(data, Z)
+
+        loss.backward()
+        optimizer.step()
+    
+    return model # not sure if inplace would work
 
 def random_splits(data, A, B):
     """
@@ -147,7 +144,7 @@ def random_splits(data, A, B):
         test_mask[i] = True
     
     data.train_mask = train_mask
-    data.valid_mask = valid_mask
+    data.val_mask = valid_mask
     data.test_mask = test_mask
     
     return data

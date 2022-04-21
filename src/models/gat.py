@@ -28,4 +28,4 @@ class GAT(torch.nn.Module):
         x = self.conv2(x, edge_index)
         Z = x
         out   = F.log_softmax(x, dim=1)
-        return out, Z
+        return Z
