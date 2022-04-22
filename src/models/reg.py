@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch_geometric.utils as utils
 import random
 
+print('ATTENTION!!! MODIFIED P TO Z IN SOME PARTS OF MAKE_PREG_LOSS!!!')
 
 def make_preg_loss(L_cls, L_preg, mu, A_hat):
     """
@@ -12,16 +13,53 @@ def make_preg_loss(L_cls, L_preg, mu, A_hat):
 
     def l(data, Z):
         P = F.softmax(Z, dim=1)
-        Q = F.softmax((A_hat@Z), dim=1)
+        Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
         Y = data.y
         M = data.train_mask.sum()
         N = data.train_mask.shape[0]
-        l_cls = L_cls(P[data.train_mask], Y[data.train_mask])
+        l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
         l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
 
         return 1 / M * l_cls + mu / N * l_preg
     return l
 
+
+def make_preg_ce_ce(mu, A_hat):
+    """
+    Returns a preg_loss function with the given parameters.
+    """
+
+
+    def l(data, Z):
+        P = F.softmax(Z, dim=1)
+        Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
+        Y = F.one_hot(data.y)
+        M = data.train_mask.sum()
+        N = data.train_mask.shape[0]
+        
+        l_cls = - (Y * torch.log(P)).sum()
+        l_preg = - (P * torch.log(Q)).sum()
+
+        return 1 / M * l_cls + mu / N * l_preg
+    return l
+
+
+def make_abduls_preg_loss(Z, A_hat,  A_hat_mask, N):
+    """
+    See section 2 from 
+    Rethinking Graph Regularization for Graph Neural Networks
+    """
+    def l(data, Z):
+        Z = Z[data.reg_mask, :]
+        Z_prime = torch.matmul(A_hat, Z)
+
+        # have a look at the table before eq (2) and appendix A
+        P = torch.softmax(Z, dim=1)
+        Q = torch.softmax(Z_prime, dim=1)
+        phi = - (P * torch.log(Q)).sum()
+
+        return (1/N) * phi
+    return l
 
 def make_confidence_penalty_loss(L_cls, beta):
     """
@@ -57,6 +95,28 @@ def make_lap_loss(L_cls, mu):
             return 1 / M * l_cls + mu / N * l_lap
     return l
 
+
+def make_lap_loss_alt(L_cls, mu):
+    """
+    See section 4.1.3 from 
+    Rethinking Graph Regularization for Graph Neural Networks
+    """
+
+    def l(data, Z):
+            P = F.softmax(Z, dim=1)
+            Y = data.y
+
+            l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+
+            Z_sources = Z[data.edge_index[0],:]
+            Z_targets = Z[data.edge_index[1],:]
+            l_lap = (torch.norm(Z_sources - Z_targets, p=2, dim=1)**2).sum()
+
+            M = data.train_mask.sum()
+            N = data.train_mask.shape[0]
+            
+            return 1 / M * l_cls + mu / N * l_lap
+    return l
 
 def compute_a_hat(data):
     """

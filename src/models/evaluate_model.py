@@ -22,6 +22,21 @@ def evaluate1(model, data):
     return acc_train, acc_val, acc_test
 
 
+def evaluate1abdul(model, data):
+    model.eval()
+    pred = model(data)[0].argmax(dim=1)
+
+    tp_train = (pred[data.train_mask] == data.y[data.train_mask]).sum()
+    tp_val = (pred[data.val_mask] == data.y[data.val_mask]).sum()
+    tp_test = (pred[data.test_mask] == data.y[data.test_mask]).sum()
+
+    acc_train = int(tp_train) / int(data.train_mask.sum())
+    acc_val = int(tp_val) / int(data.val_mask.sum())
+    acc_test = int(tp_test) / int(data.test_mask.sum())
+
+    return acc_train, acc_val, acc_test
+
+
 def test(model, data, splits):
     train_mask = splits[0].to(data.x.device)
     val_mask = splits[1].to(data.x.device)
