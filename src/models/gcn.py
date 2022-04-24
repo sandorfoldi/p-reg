@@ -19,9 +19,8 @@ class GCN0(torch.nn.Module):
 
 class GCN1(torch.nn.Module):
     ''' GCN '''
-    def __init__(self, num_node_features, num_classes, hidden_channels=16, seed = 123456):
+    def __init__(self, num_node_features, num_classes, hidden_channels=16):
         super().__init__()
-        torch.manual_seed(seed)
         self.conv1 = GCNConv(num_node_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, num_classes)
 
@@ -34,3 +33,102 @@ class GCN1(torch.nn.Module):
         Z = x
         out   = F.log_softmax(x, dim=1)
         return Z
+
+
+class GCN_fix_2layer(torch.nn.Module):
+    ''' GCN '''
+    def __init__(self):
+        super().__init__()
+        self.conv_1 = GCNConv(1433, 16)
+        self.conv_2 = GCNConv(16, 32)
+
+    def forward(self, data):
+        assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
+        assert data.y.unique().shape[0] == 7, 'this model only works for data with 7 classes'
+
+        x, edge_index = data.x, data.edge_index
+        z = self.conv_1(x, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_2(z, edge_index)
+        
+        return z
+
+
+class GCN_fix_3layer(torch.nn.Module):
+    ''' GCN '''
+    def __init__(self):
+        super().__init__()
+        self.conv_1 = GCNConv(1433, 256)
+        self.conv_2 = GCNConv(256, 32)
+        self.conv_3 = GCNConv(32, 7)
+
+    def forward(self, data):
+        assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
+        assert data.y.unique().shape[0] == 7, 'this model only works for data with 7 classes'
+
+        x, edge_index = data.x, data.edge_index
+        z = self.conv_1(x, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_2(z, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_3(z, edge_index)
+        
+        return z
+
+
+class GCN_fix_4layer(torch.nn.Module):
+    ''' GCN '''
+    def __init__(self):
+        super().__init__()
+        self.conv_1 = GCNConv(1433, 512)
+        self.conv_2 = GCNConv(512, 128)
+        self.conv_3 = GCNConv(128, 16)
+        self.conv_4 = GCNConv(16, 7)
+
+    def forward(self, data):
+        assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
+        assert data.y.unique().shape[0] == 7, 'this model only works for data with 7 classes'
+
+        x, edge_index = data.x, data.edge_index
+        z = self.conv_1(x, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_2(z, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_3(z, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_4(z, edge_index)
+        
+        return z
+
+
+class GCN_var_2layer(torch.nn.Module):
+    ''' GCN '''
+    def __init__(self, hidden_channels):
+        super().__init__()
+        self.conv_1 = GCNConv(1433, hidden_channels)
+        self.conv_2 = GCNConv(hidden_channels, 7)
+
+    def forward(self, data):
+        assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
+        assert data.y.unique().shape[0] == 7, 'this model only works for data with 7 classes'
+
+        x, edge_index = data.x, data.edge_index
+        z = self.conv_1(x, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_2(z, edge_index)
+        
+        return z

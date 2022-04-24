@@ -3,25 +3,8 @@ import torch.nn.functional as F
 import torch_geometric.utils as utils
 import random
 
-print('ATTENTION!!! MODIFIED P TO Z IN SOME PARTS OF MAKE_PREG_LOSS!!!')
+# print('ATTENTION!!! MODIFIED P TO Z IN SOME PARTS OF MAKE_PREG_LOSS!!!')
 
-def make_preg_loss(L_cls, L_preg, mu, A_hat):
-    """
-    Returns a preg_loss function with the given parameters.
-    """
-    # print('ATTENTION, ALTERNATIVE IMPLEMENTATION OF PREG, ATTENTION,')
-
-    def l(data, Z):
-        P = F.softmax(Z, dim=1)
-        Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
-        Y = data.y
-        M = data.train_mask.sum()
-        N = data.train_mask.shape[0]
-        l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
-        l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
-
-        return 1 / M * l_cls + mu / N * l_preg
-    return l
 
 
 def make_preg_ce_ce(mu, A_hat):
@@ -33,14 +16,65 @@ def make_preg_ce_ce(mu, A_hat):
     def l(data, Z):
         P = F.softmax(Z, dim=1)
         Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
-        Y = F.one_hot(data.y)
+        Y = data.y
         M = data.train_mask.sum()
         N = data.train_mask.shape[0]
         
-        l_cls = - (Y * torch.log(P)).sum()
-        l_preg = - (P * torch.log(Q)).sum()
+        L_cls = lambda x, y: F.cross_entropy(x, y, reduction='sum')
+        L_preg = lambda x, y: - (x * torch.log(y)).sum()
+
+        l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+        l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
 
         return 1 / M * l_cls + mu / N * l_preg
+    return l
+
+
+
+def make_preg_ce_ce_alt(mu, A_hat):
+    """
+    Returns a preg_loss function with the given parameters.
+    """
+
+
+    def l(data, Z):
+        P = F.softmax(Z, dim=1)
+        Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
+        Y = F.one_hot(data.y)        
+        M = data.train_mask.sum()
+        N = data.train_mask.shape[0]
+        
+        L_cls = lambda x, y: - (x * torch.log(y)).sum()
+        L_preg = lambda x, y: - (x * torch.log(y)).sum()
+
+        l_cls = L_cls(Y[data.train_mask], P[data.train_mask])
+        l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
+
+        return 1 / M * l_cls + mu / N * l_preg
+    return l
+
+
+def make_lap_loss_ce(mu):
+    """
+    See section 4.1.3 from 
+    Rethinking Graph Regularization for Graph Neural Networks
+    """
+
+    def l(data, Z):
+            P = F.softmax(Z, dim=1)
+            Y = data.y
+
+            L_cls = lambda x, y: F.cross_entropy(x, y, reduction='sum')
+            l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+
+            Z_sources = Z[data.edge_index[0],:]
+            Z_targets = Z[data.edge_index[1],:]
+            l_lap = (torch.norm(Z_sources - Z_targets, p=2, dim=1)**2).sum()
+
+            M = data.train_mask.sum()
+            N = data.train_mask.shape[0]
+            
+            return 1 / M * l_cls + mu / N * l_lap
     return l
 
 
@@ -73,8 +107,9 @@ def make_confidence_penalty_loss(L_cls, beta):
     return l
 
 
-def make_lap_loss(L_cls, mu):
+def make_lap_loss_old(L_cls, mu):
     """
+    DEPRECATED
     See section 4.1.3 from 
     Rethinking Graph Regularization for Graph Neural Networks
     """
@@ -96,8 +131,9 @@ def make_lap_loss(L_cls, mu):
     return l
 
 
-def make_lap_loss_alt(L_cls, mu):
+def make_lap_loss(L_cls, mu):
     """
+    DEPRECATED
     See section 4.1.3 from 
     Rethinking Graph Regularization for Graph Neural Networks
     """
@@ -149,6 +185,25 @@ def set_reg_mask(data, num_reg_nodes):
     data.reg_mask = reg_mask
     return data
 
+
+def make_preg_loss(L_cls, L_preg, mu, A_hat):
+    """
+    DEPRECATED
+    Returns a preg_loss function with the given parameters.
+    """
+    # print('ATTENTION, ALTERNATIVE IMPLEMENTATION OF PREG, ATTENTION,')
+
+    def l(data, Z):
+        P = F.softmax(Z, dim=1)
+        Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
+        Y = data.y
+        M = data.train_mask.sum()
+        N = data.train_mask.shape[0]
+        l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+        l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
+
+        return 1 / M * l_cls + mu / N * l_preg
+    return l
 
 
 def reg_loss(pred, prop, target, train_mask, preg_mask, L_cls, L_preg, mu=0.2, phi='ce'):
