@@ -40,7 +40,7 @@ class GCN_fix_2layer(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.conv_1 = GCNConv(1433, 16)
-        self.conv_2 = GCNConv(16, 32)
+        self.conv_2 = GCNConv(16, 7)
 
     def forward(self, data):
         assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
