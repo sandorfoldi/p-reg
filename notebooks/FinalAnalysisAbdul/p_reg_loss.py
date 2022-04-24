@@ -39,7 +39,7 @@ def A_hat_computations(data):
     return A_hat, A_hat_mask, N
 
 
-def p_reg_loss(Z, A_hat,  A_hat_mask, N, phi = 'squared_error'):
+def p_reg_loss(Z, A_hat,  A_hat_mask, N, phi = 'cross_entropy'):
     """
     See section 2 from 
     Rethinking Graph Regularization for Graph Neural Networks
@@ -47,15 +47,15 @@ def p_reg_loss(Z, A_hat,  A_hat_mask, N, phi = 'squared_error'):
     Z = Z[ A_hat_mask, :]
     Z_prime = torch.matmul(A_hat, Z)
     
-    if phi == 'squared_error': 
-        # have a look at the table before eq (2) and appendix A
-        phi = (1/2) * (torch.norm(Z_prime - Z, p=2, dim=1)**2).sum()
-
-    elif phi == 'cross_entropy':
+    if phi == 'cross_entropy':
         # have a look at the table before eq (2) and appendix A
         P = torch.softmax(Z, dim=1)
         Q = torch.softmax(Z_prime, dim=1)
         phi = - (P * torch.log(Q)).sum()
+
+    elif phi == 'squared_error': 
+        # have a look at the table before eq (2) and appendix A
+        phi = (1/2) * (torch.norm(Z_prime - Z, p=2, dim=1)**2).sum()
 
     elif phi == 'kl_divergence':            
         # have a look at the table before eq (2) and appendix A

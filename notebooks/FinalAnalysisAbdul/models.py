@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 # -----------------
 class MLP(torch.nn.Module):
     ''' MLP '''
-    def __init__(self, dataset, hidden_channels=16, seed = 123456):
+    def __init__(self, dataset, hidden_channels=16, seed = 0):
         super().__init__()
         torch.manual_seed(seed)
         self.fc1 = Linear(dataset.num_features, hidden_channels)
@@ -49,7 +49,7 @@ class MLP(torch.nn.Module):
 # -----------------
 class GCN(torch.nn.Module):
     ''' GCN '''
-    def __init__(self, dataset, hidden_channels=16, seed = 123456):
+    def __init__(self, dataset, hidden_channels=16, seed = 0):
         super().__init__()
         torch.manual_seed(seed)
         self.conv1 = GCNConv(dataset.num_features, hidden_channels)
@@ -71,7 +71,7 @@ class GCN(torch.nn.Module):
 # -----------------
 class GAT(torch.nn.Module):
     ''' GAT '''
-    def __init__(self, dataset, hidden_channels=16, seed = 123456):
+    def __init__(self, dataset, hidden_channels=16, seed = 0):
         super().__init__()
         torch.manual_seed(seed)
         self.conv1 = GATConv(dataset.num_features, hidden_channels, heads=8, dropout=0.6)
