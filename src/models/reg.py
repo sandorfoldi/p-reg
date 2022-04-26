@@ -42,7 +42,7 @@ def make_preg_ce_ce_alt(mu, A_hat):
         Q = F.softmax(torch.matmul(A_hat, Z), dim=1)
         Y = F.one_hot(data.y)        
         M = data.train_mask.sum()
-        N = data.train_mask.shape[0]
+        N = data.reg_mask.sum()
         
         L_cls = lambda x, y: - (x * torch.log(y)).sum()
         L_preg = lambda x, y: - (x * torch.log(y)).sum()
@@ -78,12 +78,14 @@ def make_lap_loss_ce(mu):
     return l
 
 
-def make_abduls_preg_loss(Z, A_hat,  A_hat_mask, N):
+def make_abduls_preg_loss(mu, A_hat):
     """
     See section 2 from 
     Rethinking Graph Regularization for Graph Neural Networks
     """
     def l(data, Z):
+        N = data.reg_mask.sum()
+
         Z = Z[data.reg_mask, :]
         Z_prime = torch.matmul(A_hat, Z)
 
@@ -91,8 +93,11 @@ def make_abduls_preg_loss(Z, A_hat,  A_hat_mask, N):
         P = torch.softmax(Z, dim=1)
         Q = torch.softmax(Z_prime, dim=1)
         phi = - (P * torch.log(Q)).sum()
+        
+        criterion = torch.nn.CrossEntropyLoss()
+        loss1 = criterion(Z[data.train_mask], data.y[data.train_mask])
 
-        return (1/N) * phi
+        return loss1 + mu / N * phi
     return l
 
 def make_confidence_penalty_loss(L_cls, beta):
