@@ -38,10 +38,8 @@ class MLP(torch.nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = F.dropout(x, p=0.5, training=self.training)
-        x = self.fc2(x)
-        Z = x
-        out   = F.log_softmax(x, dim=1)
-        return out, Z
+        Z = self.fc2(x)
+        return Z
 
 
 # ----------------- 
@@ -60,10 +58,8 @@ class GCN(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = F.relu(x)
         x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv2(x, edge_index)
-        Z = x
-        out   = F.log_softmax(x, dim=1)
-        return out, Z
+        Z = self.conv2(x, edge_index)
+        return Z
 
 
 # ----------------- 
@@ -83,7 +79,5 @@ class GAT(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=0.6, training=self.training)
-        x = self.conv2(x, edge_index)
-        Z = x
-        out   = F.log_softmax(x, dim=1)
-        return out, Z
+        Z = self.conv2(x, edge_index)
+        return Z
