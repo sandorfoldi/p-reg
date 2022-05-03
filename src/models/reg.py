@@ -78,6 +78,32 @@ def make_lap_loss_ce(mu):
     return l
 
 
+
+def make_lap_loss_ce_alt(mu):
+    """
+    See section 4.1.3 from 
+    Rethinking Graph Regularization for Graph Neural Networks
+    """
+
+    def l(data, Z):
+            P = F.softmax(Z, dim=1)
+            Y = data.y
+
+            L_cls = lambda x, y: F.cross_entropy(x, y, reduction='sum')
+            l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+
+            Z_sources = Z[data.edge_index[0],:]
+            Z_targets = Z[data.edge_index[1],:]
+            l_lap = (torch.norm(Z_sources - Z_targets, p=2, dim=1)**2).sum()
+
+            M = data.train_mask.sum()
+            N = data.edge_index.shape[1]/2
+            print(l_cls)
+            print(l_lap)
+            print('----')
+            return 1 / M * l_cls + mu / N * l_lap
+    return l
+
 def make_abduls_preg_loss(mu, A_hat):
     """
     See section 2 from 
@@ -204,7 +230,7 @@ def make_preg_loss(L_cls, L_preg, mu, A_hat):
         Y = data.y
         M = data.train_mask.sum()
         N = data.train_mask.shape[0]
-        l_cls = L_cls(Z[data.train_mask], Y[data.train_mask])
+        l_cls = L_cls(P[data.train_mask], Y[data.train_mask])
         l_preg = L_preg(P[data.reg_mask], Q[data.reg_mask])
 
         return 1 / M * l_cls + mu / N * l_preg

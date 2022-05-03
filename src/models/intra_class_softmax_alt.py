@@ -28,13 +28,23 @@ import torch_geometric.transforms as T
 from src.models.evaluate_model import test
 
 ## Function to compute the intra-class distance ##
-m = torch.nn.Softmax(dim=0)
+softmax = torch.nn.Softmax(dim=0)
 
 def intra_class_distance_alt(Z, data, mask = None):
     with torch.no_grad():
         icds = [] # intra class distances
         for c in data.y.unique().numpy():
             s_k = Z[data.y == c]
+            icds.append(s_k.std()**2)
+        
+        return np.array(icds).mean()
+
+
+def intra_class_distance_alt_1(Z, data, mask = None):
+    with torch.no_grad():
+        icds = [] # intra class distances
+        for c in data.y.unique().numpy():
+            s_k = softmax(Z[data.y == c])
             icds.append(s_k.std()**2)
         
         return np.array(icds).mean()
