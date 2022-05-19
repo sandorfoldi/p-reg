@@ -34,8 +34,8 @@ class NN0(torch.nn.Module):
 class NN1(torch.nn.Module):
     def __init__(self, num_node_features, num_classes):
         super().__init__()
-        self.dense1 = Linear(num_node_features, 16)
-        self.dense2 = Linear(16, num_classes)
+        self.dense1 = Linear(num_node_features, 64)
+        self.dense2 = Linear(64, num_classes)
 
     def forward(self, data):
         x = data.x

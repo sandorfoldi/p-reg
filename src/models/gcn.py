@@ -75,6 +75,25 @@ class GCN_fix_2layer_64hidden(torch.nn.Module):
         z = self.conv_2(z, edge_index)
         
         return z
+class GCN_fix_2layer_128hidden(torch.nn.Module):
+    ''' GCN '''
+    def __init__(self):
+        super().__init__()
+        self.conv_1 = GCNConv(1433, 128)
+        self.conv_2 = GCNConv(128, 7)
+
+    def forward(self, data):
+        assert data.x.shape[1] == 1433, 'this model only works for data with 1433 node features'
+        assert data.y.unique().shape[0] == 7, 'this model only works for data with 7 classes'
+
+        x, edge_index = data.x, data.edge_index
+        z = self.conv_1(x, edge_index)
+        z = F.relu(z)
+        z = F.dropout(z, p=0.5, training=self.training)
+
+        z = self.conv_2(z, edge_index)
+        
+        return z
 
 class GCN_fix_3layer(torch.nn.Module):
     ''' GCN '''
