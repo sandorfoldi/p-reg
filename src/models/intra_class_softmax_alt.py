@@ -25,7 +25,6 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 
-from src.models.evaluate_model import test
 
 ## Function to compute the intra-class distance ##
 softmax = torch.nn.Softmax(dim=0)

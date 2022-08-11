@@ -12,6 +12,10 @@ from src.models.gcn import GCN0
 
 from src.models.train_model import train
 from src.models.train_model import random_splits
+from src.models.train_model import train_with_loss
+
+from src.models.reg import make_preg_ce_ce
+from src.models.reg import compute_a_hat
 
 #from src.models.evaluate_model import evaluate0
 #from src.models.evaluate_model import evaluate1
@@ -25,7 +29,6 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 
-from src.models.evaluate_model import test
 
 ## Function to compute the intra-class distance ##
 m = torch.nn.Softmax(dim=0)
@@ -78,16 +81,20 @@ def main():
     data = dataset[0].to(device)
     data = random_splits(data, 50, 20)
     splits = data.train_mask, data.val_mask, data.test_mask
+    data.reg_mask = torch.ones_like(data.train_mask, dtype=torch.bool)
 
     print('-------------------------------------------------------------')
     print(f'train size: {data.train_mask.sum()}')
-    print(f'valid size: {data.valid_mask.sum()}')
+    print(f'valid size: {data.val_mask.sum()}')
     print(f'test size: {data.test_mask.sum()}')
     print('-------------------------------------------------------------')
 
     ## Loop over values of mu ##
 
-    mus = []; dist_mus = []
+    mus = []
+    dist_mus = []
+    A_hat = compute_a_hat(data)
+
     for mu in range(0,21,2):
         mu = mu / 10
         mus.append(mu)
@@ -97,8 +104,12 @@ def main():
         gcn_model = GCN0(num_node_features=dataset.num_node_features,
                         num_classes=dataset.num_classes) \
                         .to(device)
+    
+        loss_fn = make_preg_ce_ce(mu, A_hat)
 
-        gcn_model = train(gcn_model, data, mu=mu, num_epochs=1000)
+        # gcn_model = train(gcn_model, data, mu=mu, num_epochs=1000)
+        gcn_model = train_with_loss(gcn_model, data, loss_fn, num_epochs=200)
+
         out = gcn_model(data)
         pred = gcn_model(data).argmax(dim=1)
 

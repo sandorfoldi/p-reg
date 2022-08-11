@@ -33,7 +33,6 @@ from torch_geometric.datasets import Planetoid
 import torch_geometric.transforms as T
 from sklearn.manifold import TSNE
 
-from src.models.evaluate_model import test
 from tqdm import tqdm
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable

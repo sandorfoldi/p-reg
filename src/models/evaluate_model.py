@@ -1,3 +1,6 @@
+import numpy as np
+import torch
+
 def evaluate0(model, data):    
     model.eval()
     pred = model(data).argmax(dim=1)
@@ -37,15 +40,70 @@ def evaluate1abdul(model, data):
     return acc_train, acc_val, acc_test
 
 
-def test(model, data, splits):
-    train_mask = splits[0].to(data.x.device)
-    val_mask = splits[1].to(data.x.device)
-    test_mask = splits[2].to(data.x.device)
+def icd0(model, data):
     model.eval()
-    # final output
-    logits, accs = model(data), []
-    for mask in [train_mask, val_mask, test_mask]:
-        pred = logits[mask].max(1)[1]
-        acc = pred.eq(data.y[mask]).sum().item() / mask.sum().item()
-        accs.append(acc)
-    return accs
+    out = model(data)[data.train_mask]
+    pred = out.argmax(dim=1)
+
+    N = len(pred)
+
+    w=0
+    class_ids = np.unique(pred)
+
+    for class_id in class_ids:
+        # Sk = nodes in class k
+        Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+
+        # Compute ck
+        ck = torch.Tensor(np.zeros(len(class_ids)))
+        for i in Sk:
+            #zi = torch.max(out[i]).item()
+            zi = out[i].clone().detach()
+            zi = torch.nn.Softmax(dim=0)(zi)
+            ck += zi
+        ck = ck/len(Sk)
+
+        for i in Sk:
+            #zi = torch.max(out[i]).item()
+            zi = out[i].clone().detach()
+            zi = torch.nn.Softmax(dim=0)(zi)
+            w += torch.linalg.norm(zi-ck)
+        
+        #print(clk, ck, w)
+
+    return w/N
+
+def icd1(model, data):
+    model.eval()
+    with torch.no_grad():
+        Z = model(data)
+        icds = [] # intra class distances
+        for c in data.y.unique().numpy():
+            s_k = Z[data.y == c]
+            icds.append(s_k.std()**2)
+        
+        return np.array(icds).mean()
+
+
+def icd2(model, data):
+    model.eval()
+    with torch.no_grad():
+        Z = model(data)
+        icds = [] # intra class distances
+        for c in data.y.unique().numpy():
+            s_k = torch.nn.Softmax(dim=0)(Z[data.y == c])
+            icds.append(s_k.std()**2)
+        
+        return np.array(icds).mean()
+
+
+def icd3(model, data):
+    model.eval()
+    with torch.no_grad():
+        Z = model(data).numpy()
+        icds = []
+        for c in data.y.unique().numpy():
+            s_k = Z[data.y == c]
+            icds.append((((s_k.mean() - s_k)**2)**.5).mean())
+        
+        return np.array(icds).mean()
