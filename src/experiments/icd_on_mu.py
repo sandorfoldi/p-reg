@@ -40,7 +40,8 @@ data = dataset[0].to(device)
 
 A_hat = compute_a_hat(data)
 
-data.reg_mask = torch.ones_like(data.train_mask, dtype=torch.bool)
+# data.reg_mask = torch.ones_like(data.train_mask, dtype=torch.bool)
+data.reg_mask = data.train_mask
 
 print('-------------------------------------------------------------')
 print(f'train size: {data.train_mask.sum()}')
