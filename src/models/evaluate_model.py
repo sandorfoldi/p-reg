@@ -57,6 +57,40 @@ def icd0(model, data, N=7):
 
     return w/N
 
+
+def icd0_saf(model, data, N=7):
+    model.eval()
+    Z = model(data)[data.train_mask]
+    pred = Z.argmax(dim=1)
+
+    w=0
+    class_ids = np.unique(data.y)
+
+    for class_id in class_ids:
+        # Sk = nodes in class k
+        Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+
+        # Compute ck
+        ck = torch.Tensor(np.zeros(len(class_ids)))
+        for i in Sk:
+            #zi = torch.max(out[i]).item()
+            zi = Z[i].clone().detach()
+            zi = torch.nn.Softmax(dim=0)(zi)
+            ck += zi
+        ck = ck/len(Sk)
+
+        for i in Sk:
+            #zi = torch.max(out[i]).item()
+            zi = Z[i].clone().detach()
+            zi = torch.nn.Softmax(dim=0)(zi)
+            w += torch.linalg.norm(zi-ck)
+        
+        #print(clk, ck, w)
+
+    return w/N
+    pass
+
+
 def icd1(model, data):
     model.eval()
     with torch.no_grad():
@@ -106,3 +140,4 @@ def icd4(model, data):
             
             icds.append(np.array(icd_per_class).mean())
         return icds
+
