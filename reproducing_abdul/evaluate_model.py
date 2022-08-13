@@ -12,7 +12,7 @@ def evaluate0(model, data):
 
 def acc(model, data):
     model.eval()
-    pred = model(data).argmax(dim=1)
+    pred = model(data)[1].argmax(dim=1)
 
     tp_train = (pred[data.train_mask] == data.y[data.train_mask]).sum()
     tp_val = (pred[data.val_mask] == data.y[data.val_mask]).sum()
@@ -25,14 +25,16 @@ def acc(model, data):
     return acc_train, acc_val, acc_test
 
 
-def icd0(model, data, N=7):
+def icd0(model, data):
     model.eval()
-    out = model(data)[data.train_mask]
+    # out = model(data)[0][data.train_mask]
+    out = model(data)[0][data.test_mask]
     pred = out.argmax(dim=1)
 
-    # N = len(pred)
+    N = len(pred)
+
     w=0
-    class_ids = np.unique(data.y)
+    class_ids = np.unique(pred)
 
     for class_id in class_ids:
         # Sk = nodes in class k
@@ -60,7 +62,7 @@ def icd0(model, data, N=7):
 def icd1(model, data):
     model.eval()
     with torch.no_grad():
-        Z = model(data)
+        Z = model(data)[1]
         icds = [] # intra class distances
         for c in data.y.unique().numpy():
             s_k = Z[data.y == c]
@@ -72,7 +74,7 @@ def icd1(model, data):
 def icd2(model, data):
     model.eval()
     with torch.no_grad():
-        Z = model(data)
+        Z = model(data)[1]
         icds = [] # intra class distances
         for c in data.y.unique().numpy():
             s_k = torch.nn.Softmax(dim=0)(Z[data.y == c])
@@ -84,7 +86,7 @@ def icd2(model, data):
 def icd3(model, data):
     model.eval()
     with torch.no_grad():
-        Z = model(data).numpy()
+        Z = model(data)[1].numpy()
         icds = []
         for c in data.y.unique().numpy():
             s_k = Z[data.y == c]
@@ -98,7 +100,7 @@ def icd4(model, data):
     with torch.no_grad():
         icds = []
         for mask in [data.train_mask, data.val_mask, data.test_mask]:
-            Z = model(data)[mask]
+            Z = model(data)[1][mask]
             icd_per_class = [] # intra class distances
             for c in data.y.unique().numpy():
                 s_k = torch.nn.Softmax(dim=0)(Z[data.y[mask] == c])

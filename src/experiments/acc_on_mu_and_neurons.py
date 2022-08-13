@@ -20,9 +20,9 @@ from src.models.reg import make_lap_loss_ce
 
 from src.models.reg import compute_a_hat
 
-from src.models.evaluate_model import evaluate0
-from src.models.evaluate_model import evaluate1
-
+from src.models.evaluate_model import acc
+from src.models.evaluate_model import icd0
+from src.models.evaluate_model import icd3
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
@@ -66,10 +66,18 @@ for seed in [0,1,2,3,4]:
 
             model = train_with_loss(model, data, loss_fn, num_epochs=200)
 
-            acc = evaluate0(model, data)
-
-            train_acc, val_acc, test_acc = evaluate1(model, data)
-            metrics.append({'seed': seed, 'hidden_channels': hidden_channels, 'mu': mu, 'train_acc': np.round(train_acc,4), 'val_acc': np.round(val_acc,4), 'test_acc': np.round(test_acc,4)})
+            train_acc, val_acc, test_acc = acc(model, data)
+            d_0 = icd0(model, data)
+            d_3 = icd3(model, data)
+            
+            metrics.append({'seed': seed, 
+            'hidden_channels': hidden_channels, 
+            'mu': mu, 
+            'train_acc': np.round(train_acc,4), 
+            'val_acc': np.round(val_acc,4), 
+            'test_acc': np.round(test_acc,4),
+            'icd0': d_0,
+            'icd3':d_3,})
             print(metrics[-1])
 
 

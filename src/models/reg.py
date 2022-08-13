@@ -54,6 +54,42 @@ def make_preg_ce_ce_alt(mu, A_hat):
     return l
 
 
+def compute_a_hat_abdul(data):
+    """
+    """
+    edge_index = data.edge_index
+    edge_index, _ =  utils.remove_self_loops(edge_index)
+    edge_index, _, A_hat_mask = utils.remove_isolated_nodes(edge_index)
+
+    A = utils.to_dense_adj(edge_index).squeeze()
+    D = torch.diag(utils.degree(edge_index[0]))
+
+    A_hat = torch.linalg.solve(D, A)
+    A_hat.requires_grad = False
+    N = A_hat.shape[0]
+
+    return A_hat, A_hat_mask, N
+
+
+def make_preg_abdul(mu, A_hat, N):
+    def p_reg_loss(Z, A_hat,  A_hat_mask, N):
+        Z = Z[ A_hat_mask, :]
+        Z_prime = torch.matmul(A_hat, Z)
+        # have a look at the table before eq (2) and appendix A
+        P = torch.softmax(Z, dim=1)
+        Q = torch.softmax(Z_prime, dim=1)
+        phi = - (P * torch.log(Q)).sum()
+        return (1/N) * phi
+    
+    def l(data, Z):
+        loss_1 = torch.nn.CrossEntropyLoss()(Z[data.train_mask], data.y[data.train_mask])  # Compute the loss solely based on the training nodes.
+        loss_2 = p_reg_loss(Z, A_hat, data.reg_mask, N)
+
+        loss = loss_1 + mu * loss_2
+        return loss
+    return l
+
+
 def make_lap_loss_ce(mu):
     """
     See section 4.1.3 from 

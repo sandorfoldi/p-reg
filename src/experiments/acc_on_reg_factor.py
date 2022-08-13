@@ -15,7 +15,7 @@ from src.models.reg import make_preg_ce_ce
 from src.models.reg import make_lap_loss_ce
 from src.models.reg import compute_a_hat
 
-from src.models.evaluate_model import evaluate1
+from src.models.evaluate_model import acc
 
 import torch
 import torch.nn.functional as F
@@ -45,7 +45,7 @@ print('-------------------------------------------------------------')
 
 metrics = []
 
-for loss_fn_name in ['lap_loss', 'preg_loss']:
+for loss_fn_name in ['preg_loss', 'lap_loss',]:
     for model_name in ['gcn', 'gat']:
         for mu in range(9):
             torch.manual_seed(1)
@@ -63,7 +63,7 @@ for loss_fn_name in ['lap_loss', 'preg_loss']:
             if model_name == 'gcn':
                 model = GCN1(num_node_features=dataset.num_node_features,
                     num_classes=dataset.num_classes,
-                    hidden_channels=64) \
+                    hidden_channels=16) \
                     .to(device)
             elif model_name == 'gat':
                 model = GAT(dataset=dataset).to(device)
@@ -73,7 +73,7 @@ for loss_fn_name in ['lap_loss', 'preg_loss']:
             model = train_with_loss(model, data, loss_fn, num_epochs=200)
 
 
-            train_acc, val_acc, test_acc = evaluate1(model, data)
+            train_acc, val_acc, test_acc = acc(model, data)
             metrics.append({'model': model_name, 'reg': loss_fn_name, 'mu': mu, 'train_acc': np.round(train_acc,4), 'val_acc': np.round(val_acc,4), 'test_acc': np.round(test_acc,4)})
             print(metrics[-1])
 
