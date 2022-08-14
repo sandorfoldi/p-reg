@@ -90,19 +90,21 @@ def make_preg_abdul(mu, A_hat, N):
     return l
 
 
-def make_l_abdul(l_1, l_2, mu, p_reg_dict):
-    def loss_fn(data, Z):
-        loss_1 = l_1(Z[data.train_mask], data.y[data.train_mask])  # Compute the loss solely based on the training nodes.
-        loss_2 = 0
-        if mu > 0:
-            loss_2 = l_2(Z, 
-                            p_reg_dict['A_hat'], 
-                            p_reg_dict['A_hat_mask'], 
-                            p_reg_dict['N'], 
-                            phi = p_reg_dict['phi'])
+def make_l_abdul(mu, A_hat):
+
+    def l(data, Z):
+        loss_1 = torch.nn.CrossEntropyLoss()(Z[data.train_mask], data.y[data.train_mask])
+        
+        Z_prime = torch.matmul(A_hat, Z)
+        
+        P = torch.softmax(Z[data.reg_mask], dim=1)
+        Q = torch.softmax(Z_prime[data.reg_mask], dim=1)
+        
+        phi = - (P * torch.log(Q)).sum()
+        loss_2 = (1/A_hat.shape[0]) * phi
         loss = loss_1 + mu * loss_2 
         return loss
-    return loss_fn
+    return l
 
 
 def make_lap_loss_ce(mu):

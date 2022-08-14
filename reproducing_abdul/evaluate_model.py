@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
+
 
 def evaluate0(model, data):    
     model.eval()
@@ -12,7 +14,7 @@ def evaluate0(model, data):
 
 def acc(model, data):
     model.eval()
-    pred = model(data)[1].argmax(dim=1)
+    pred = model(data).argmax(dim=1)
 
     tp_train = (pred[data.train_mask] == data.y[data.train_mask]).sum()
     tp_val = (pred[data.val_mask] == data.y[data.val_mask]).sum()
@@ -28,7 +30,8 @@ def acc(model, data):
 def icd0(model, data):
     model.eval()
     # out = model(data)[0][data.train_mask]
-    out = model(data)[0][data.test_mask]
+    Z = model(data)[data.test_mask]
+    out = F.log_softmax(Z, dim=1)
     pred = out.argmax(dim=1)
 
     N = len(pred)

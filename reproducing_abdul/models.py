@@ -49,9 +49,9 @@ class MLP(torch.nn.Module):
 # -----------------
 class GCN(torch.nn.Module):
     ''' GCN '''
-    def __init__(self, num_features, num_classes, hidden_channels=16):
+    def __init__(self, num_node_features, num_classes, hidden_channels=16):
         super().__init__()
-        self.conv1 = GCNConv(num_features, hidden_channels)
+        self.conv1 = GCNConv(num_node_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, num_classes)
 
     def forward(self, data):
