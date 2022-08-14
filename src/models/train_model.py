@@ -1,107 +1,11 @@
+import random
+
 import torch
 import torch.nn.functional as F
 import torch_geometric.utils as utils
 
 from src.models.reg import compute_a_hat
-# from src.models.reg import reg_loss
-# from src.models.reg import cp_reg
 
-
-
-import random
-
-
-def train(model, data, preg_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, mu=0.01):
-    """ Train model"""
-
-    # If no preg mask is given, use the entire dataset
-    if preg_mask is None:
-        preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool)
-
-    # A_hat is the normalized adjacency matrix, needed for preg
-    A_hat = compute_a_hat(data)
-
-    # training the model
-    # initializing the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    # setting model to train mode
-    model.train()
-
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-
-        pred = model(data)
-        prop = A_hat@pred
-        
-        loss = reg_loss(
-            pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
-            prop=F.softmax(prop, dim=1), # 
-            target=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
-            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
-            preg_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
-            L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
-            L_preg=lambda x, y: F.cross_entropy(x, y),
-            mu=mu,
-            )
-
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
-
-
-def train_conf_pen(model, data, conf_pen_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
-    """ Train model"""
-
-    # training the model
-    # initializing the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    # setting model to train mode
-    model.train()
-
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-
-        pred = model(data)
-        
-        loss = cp_reg(
-            pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
-            target=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
-            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
-            conf_pen_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
-            L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
-            beta=beta,
-            )
-
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
-
-
-def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
-    """ 
-    Train model using given loss function
-    Loss function must have the following structure:
-    def loss(data: from torch_geometric.data import Data, pred: torch.tensor([num_nodes, num_classes])) -> scalar value
-
-    """
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    model.train()
-
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-
-        Z = model(data)
-
-        loss = loss_fn(data, Z)
-
-        loss.backward()
-        optimizer.step()
-    
-    return model # not sure if inplace would work
 
 def random_splits(data, A, B):
     """
@@ -150,13 +54,58 @@ def random_splits(data, A, B):
     return data
 
 
+def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
+    """ 
+    Train model using given loss function
+    Loss function must have the following structure:
+    def loss(data: from torch_geometric.data import Data, pred: torch.tensor([num_nodes, num_classes])) -> scalar value
+
+    """
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    model.train()
+
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
+
+        Z = model(data)
+
+        loss = loss_fn(data, Z)
+
+        loss.backward()
+        optimizer.step()
+    
+    return model # not sure if inplace would work
 
 
+def train_conf_pen(model, data, conf_pen_mask=None, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
+    """ Train model"""
 
+    # training the model
+    # initializing the optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # setting model to train mode
+    model.train()
 
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
 
+        pred = model(data)
+        
+        loss = cp_reg(
+            pred=F.softmax(pred, dim=1), # we make predictions on the entire dataset
+            target=data.y[data.train_mask], # we assume to have ground-truth labels on only a subset of the dataset
+            train_mask=data.train_mask, # hence, we also provide the train_mask, to know what nodes have labels
+            conf_pen_mask=torch.ones_like(data.train_mask, dtype=torch.bool),
+            L_cls=lambda x, y: F.nll_loss(torch.log(x), y),
+            beta=beta,
+            )
 
-
+        loss.backward()
+        optimizer.step()
+    
+    return model # not sure if inplace would work
 
 
 
