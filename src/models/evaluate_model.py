@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+import torch.nn.functional as F
+
 def evaluate0(model, data):    
     model.eval()
     pred = model(data).argmax(dim=1)
@@ -27,7 +29,8 @@ def acc(model, data):
 
 def icd0(model, data, N=7):
     model.eval()
-    out = model(data)[data.train_mask]
+    Z = model(data)[data.train_mask]
+    out = F.log_softmax(Z, dim=1)
     pred = out.argmax(dim=1)
 
     # N = len(pred)
