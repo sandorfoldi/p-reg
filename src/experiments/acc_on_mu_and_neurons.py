@@ -55,8 +55,8 @@ print('-------------------------------------------------------------')
 
 metrics = []
 for seed in [0,1,2,3,4]:
-    for hidden_channels in [1, 2, 4, 8, 16, 32, 64, 128]:
-        for mu in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
+    for hidden_channels in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+        for mu in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0, 1.1, 1.2, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]:
             torch.manual_seed(seed)
             random.seed(seed)
 
@@ -83,6 +83,8 @@ for seed in [0,1,2,3,4]:
 
 
 df = pd.DataFrame(metrics)
+df.to_csv('reports/figures/acc_on_mu_and_neurons.csv')
+"""
 # ridiculously slow implementation, but I don't want to figure this out now
 arr = np.zeros((df['hidden_channels'].unique().shape[0], df['mu'].unique().shape[0]))
 for ind_i, i in enumerate(df['hidden_channels'].unique()):
@@ -105,5 +107,5 @@ add_colorbar(im, fig, ax)
 ax.set(xlabel='Regularization factor', ylabel='No. neurons in hidden layer')
 ax.legend()
 
-df.to_csv('reports/figures/acc_on_mu_and_neurons.csv')
 plt.savefig('reports/figures/acc_on_mu_and_neurons.png', dpi=300)
+"""
