@@ -22,7 +22,11 @@ from src.models.reg import compute_a_hat
 
 from src.models.evaluate_model import acc
 from src.models.evaluate_model import icd0
+from src.models.evaluate_model import icd1
+from src.models.evaluate_model import icd2
 from src.models.evaluate_model import icd3
+from src.models.evaluate_model import icd4
+
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
@@ -56,7 +60,7 @@ print('-------------------------------------------------------------')
 metrics = []
 for seed in [0,1,2,3,4]:
     for hidden_channels in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
-        for mu in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0, 1.1, 1.2, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]:
+        for mu in range(0,41, 2):
             torch.manual_seed(seed)
             random.seed(seed)
 
@@ -67,8 +71,11 @@ for seed in [0,1,2,3,4]:
             model = train_with_loss(model, data, loss_fn, num_epochs=200)
 
             train_acc, val_acc, test_acc = acc(model, data)
-            d_0 = icd0(model, data)
-            d_3 = icd3(model, data)
+            d0 = icd0(model, data)
+            d1 = icd1(model, data)
+            d2 = icd2(model, data)
+            d3 = icd3(model, data)
+            d4 = icd4(model, data)
             
             metrics.append({'seed': seed, 
             'hidden_channels': hidden_channels, 
@@ -76,8 +83,11 @@ for seed in [0,1,2,3,4]:
             'train_acc': np.round(train_acc,4), 
             'val_acc': np.round(val_acc,4), 
             'test_acc': np.round(test_acc,4),
-            'icd0': d_0,
-            'icd3':d_3,})
+            'icd0': d0,
+            'icd1': d1,
+            'icd2': d2,
+            'icd3': d3,
+            'icd4': d4,})
             print(metrics[-1])
 
 
