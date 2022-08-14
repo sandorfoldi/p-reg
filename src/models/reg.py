@@ -91,38 +91,20 @@ def make_preg_abdul(mu, A_hat, N):
 
 
 def make_l_abdul(mu, A_hat):
-    l_1 = torch.nn.CrossEntropyLoss()
 
-    def l_2(Z, A_hat,  A_hat_mask, N):
-        """
-        See section 2 from 
-        Rethinking Graph Regularization for Graph Neural Networks
-        """
-        Z = Z[ A_hat_mask, :]
+    def l(data, Z):
+        loss_1 = torch.nn.CrossEntropyLoss()(Z[data.train_mask], data.y[data.train_mask])
+        
         Z_prime = torch.matmul(A_hat, Z)
         
-        # have a look at the table before eq (2) and appendix A
-        P = torch.softmax(Z, dim=1)
-        Q = torch.softmax(Z_prime, dim=1)
-        phi = - (P * torch.log(Q)).sum()
-
+        P = torch.softmax(Z[data.reg_mask], dim=1)
+        Q = torch.softmax(Z_prime[data.reg_mask], dim=1)
         
-
-        return (1/N) * phi
-
-
-    def loss_fn(data, Z):
-        loss_1 = l_1(Z[data.train_mask], data.y[data.train_mask])  # Compute the loss solely based on the training nodes.
-        loss_2 = 0
-        if mu > 0:
-            loss_2 = l_2(
-                Z, 
-                A_hat, 
-                data.reg_mask, 
-                A_hat.shape[0],)
+        phi = - (P * torch.log(Q)).sum()
+        loss_2 = (1/A_hat.shape[0]) * phi
         loss = loss_1 + mu * loss_2 
         return loss
-    return loss_fn
+    return l
 
 
 def make_lap_loss_ce(mu):
