@@ -13,7 +13,7 @@ from src.models.reg import make_l_abdul
 from src.models.train_model import train_with_loss
 
 from src.models.evaluate_model import acc
-from src.models.evaluate_model import icd0
+from src.models.evaluate_model import icd_apolline_1
 
 
 from src.models.train_model import random_splits
@@ -54,7 +54,7 @@ for seed in range(4):
 
         train_acc, val_acc, test_acc = acc(model, data)
 
-        d0 = icd0(model, data)
+        d0 = icd_apolline_1(model, data)
 
 
         metrics.append({
