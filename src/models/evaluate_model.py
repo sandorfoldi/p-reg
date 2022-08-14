@@ -27,13 +27,15 @@ def acc(model, data):
     return acc_train, acc_val, acc_test
 
 
-def icd0(model, data, N=7):
+def icd0(model, data):
     model.eval()
-    Z = model(data)[data.train_mask]
+    # out = model(data)[0][data.train_mask]
+    Z = model(data)[data.test_mask]
     out = F.log_softmax(Z, dim=1)
     pred = out.argmax(dim=1)
 
-    # N = len(pred)
+    N = len(pred)
+
     w=0
     class_ids = np.unique(data.y)
 

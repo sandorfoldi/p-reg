@@ -3,34 +3,22 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from tqdm import tqdm
+import torch
+import torch_geometric.transforms as T
+from torch_geometric.datasets import Planetoid
 
+# src
 from src.models.gcn import GCN1
-from src.models.gat import GAT
-
-from src.models.train_model import train_with_loss
-from src.models.train_model import random_splits
-
-from src.models.reg import make_preg_ce_ce
-from src.models.reg import make_lap_loss_ce
 from src.models.reg import make_l_abdul
-from src.models.reg import compute_a_hat
+from src.models.train_model import train_with_loss
 
 from src.models.evaluate_model import acc
 from src.models.evaluate_model import icd0
-from src.models.evaluate_model import icd1
-from src.models.evaluate_model import icd2
-from src.models.evaluate_model import icd3
-from src.models.evaluate_model import icd4
 
-import torch
-import torch.nn.functional as F
 
-import torch_geometric.transforms as T
+from src.models.train_model import random_splits
 
-from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-from torch_geometric.datasets import Planetoid
+from src.models.reg import compute_a_hat
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
