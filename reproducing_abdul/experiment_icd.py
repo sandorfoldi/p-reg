@@ -2,6 +2,7 @@ import pandas as pd
 import random
 # src 
 from models import MLP, GCN, GAT
+from src.models.gcn import GCN1
 from random_split import random_split
 from p_reg_loss import A_hat_computations, p_reg_loss
 from lap_loss import lap_loss
@@ -50,7 +51,7 @@ p_reg_dict = {
 metrics = []
 # for seed in range(4):
 for seed in [11, 12]:
-    for mu in range(0, 11):
+    for mu in range(0, 21, 2):
         if mu == 0 and seed == 0:    
             print('-------------------------------------------------------------')
             print(f'train size: {data.train_mask.sum()}')
@@ -71,6 +72,10 @@ for seed in [11, 12]:
             num_features=dataset.num_features,
             num_classes=dataset.num_classes,
             hidden_channels=64).to(device)
+        """model = GCN1(
+            num_node_features=dataset.num_node_features,
+            num_classes=dataset.num_classes,
+            hidden_channels=64).to(device)"""
         
         # train
         train(l_abdul, model, data, mu, p_reg_dict, num_epochs=epochs)    
