@@ -90,6 +90,21 @@ def make_preg_abdul(mu, A_hat, N):
     return l
 
 
+def make_l_abdul(l_1, l_2, mu, p_reg_dict):
+    def loss_fn(data, Z):
+        loss_1 = l_1(Z[data.train_mask], data.y[data.train_mask])  # Compute the loss solely based on the training nodes.
+        loss_2 = 0
+        if mu > 0:
+            loss_2 = l_2(Z, 
+                            p_reg_dict['A_hat'], 
+                            p_reg_dict['A_hat_mask'], 
+                            p_reg_dict['N'], 
+                            phi = p_reg_dict['phi'])
+        loss = loss_1 + mu * loss_2 
+        return loss
+    return loss_fn
+
+
 def make_lap_loss_ce(mu):
     """
     See section 4.1.3 from 

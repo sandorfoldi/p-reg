@@ -34,7 +34,7 @@ def icd0(model, data):
     N = len(pred)
 
     w=0
-    class_ids = np.unique(pred)
+    class_ids = np.unique(data.y)
 
     for class_id in class_ids:
         # Sk = nodes in class k
