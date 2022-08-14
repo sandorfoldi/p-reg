@@ -49,7 +49,7 @@ p_reg_dict = {
 metrics = []
 # for seed in range(4):
 for seed in [11, 12]:
-    for mu in range(0, 11):
+    for mu in range(0, 21, 2):
         if mu == 0 and seed == 0:    
             print('-------------------------------------------------------------')
             print(f'train size: {data.train_mask.sum()}')
