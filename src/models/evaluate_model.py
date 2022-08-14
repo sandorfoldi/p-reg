@@ -60,7 +60,7 @@ def icd0(model, data):
         
         #print(clk, ck, w)
 
-    return w/N
+    return (w/N).item()
 
 
 def icd0_saf(model, data, N=7):
