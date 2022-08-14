@@ -1,3 +1,4 @@
+import pandas as pd
 import random
 # src 
 from models import MLP, GCN, GAT
@@ -10,8 +11,8 @@ from utils import report_vis
 from utils import report_stats
 import torch 
 
-from evaluate_model import acc, icd0, icd1, icd2, icd3, icd4
-
+# from evaluate_model import acc, icd0, icd1, icd2, icd3, icd4
+from src.models.evaluate_model import acc, icd0, icd1, icd2, icd3, icd4
 import torch_geometric.transforms as T
 
 # packages
@@ -67,11 +68,9 @@ for seed in [11, 12]:
         l_abdul = make_l_abdul(criterion, p_reg_loss, mu, p_reg_dict)
 
         model = GCN(
-            dataset,
-            hidden_channels=64, 
-            seed = 0).to(device)
-        
-
+            num_features=dataset.num_features,
+            num_classes=dataset.num_classes,
+            hidden_channels=64).to(device)
         
         # train
         train(l_abdul, model, data, mu, p_reg_dict, num_epochs=epochs)    
@@ -100,5 +99,8 @@ for seed in [11, 12]:
         })
 
         print(metrics[-1])
+df = pd.DataFrame(metrics)
+df.to_csv('reports/figures/experiment_icd.csv')
+
 
 

@@ -49,11 +49,10 @@ class MLP(torch.nn.Module):
 # -----------------
 class GCN(torch.nn.Module):
     ''' GCN '''
-    def __init__(self, dataset, hidden_channels=16, seed = 0):
+    def __init__(self, num_features, num_classes, hidden_channels=16):
         super().__init__()
-        torch.manual_seed(seed)
-        self.conv1 = GCNConv(dataset.num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, dataset.num_classes)
+        self.conv1 = GCNConv(num_features, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, num_classes)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
@@ -63,7 +62,7 @@ class GCN(torch.nn.Module):
         x = self.conv2(x, edge_index)
         Z = x
         out   = F.log_softmax(x, dim=1)
-        return out, Z
+        return Z
 
 
 # ----------------- 

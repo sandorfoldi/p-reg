@@ -6,7 +6,7 @@ def train(loss_fn, model, data, mu, p_reg_dict=None, num_epochs=200):
     for i in range(num_epochs):
         model.train()
         optimizer.zero_grad()  # Clear gradients.
-        _, Z = model(data)     # Perform a single forward pass.    
+        Z = model(data)     # Perform a single forward pass.    
         loss = loss_fn(data, Z)
         loss.backward()  # Derive gradients.
         optimizer.step()  # Update parameters based on gradients.
