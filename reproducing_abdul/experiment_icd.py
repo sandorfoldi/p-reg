@@ -29,11 +29,8 @@ import time
 
 from src.models.reg import make_l_abdul
 from src.abdul.train_model import train
+from src.models.train_model import train_with_loss
 
-
-reg_loss='p_reg'
-p_reg_phi = 'cross_entropy'
-epochs = 200
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset = Planetoid(root=f'/tmp/Cora', name='Cora', transform=T.NormalizeFeatures())
@@ -43,14 +40,8 @@ data = dataset[0].to(device)
 A_hat, A_hat_mask, N = A_hat_computations(data)
 data.reg_mask = A_hat_mask
 
-p_reg_dict = {
-    'A_hat': A_hat, 
-    'A_hat_mask': A_hat_mask, 
-    'N': N, 
-    'phi': p_reg_phi}  
 
 metrics = []
-# for seed in range(4):
 for seed in [0]:
     for mu in range(0, 41, 4):
         if mu == 0 and seed == 0:    
@@ -65,19 +56,16 @@ for seed in [0]:
         torch.manual_seed(seed)
         random.seed(seed)
 
-
         l_abdul = make_l_abdul(mu, A_hat)
 
-        
         model = GCN1(
             num_node_features=dataset.num_features,
             num_classes=dataset.num_classes,
             hidden_channels=64, ).to(device)
         
-
-        
         # train
-        model = train(l_abdul, model, data, mu, p_reg_dict, num_epochs=epochs)    
+        # model = train(l_abdul, model, data, mu, p_reg_dict, num_epochs=epochs)    
+        model = train_with_loss(model, data, l_abdul, num_epochs=200)    
 
         train_acc, val_acc, test_acc = acc(model, data)
         
