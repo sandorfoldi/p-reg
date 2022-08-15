@@ -54,7 +54,7 @@ def random_splits(data, A, B):
     return data
 
 
-def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs=100, beta=0.01):
+def train_with_loss(model, data, loss_fn, lr=0.01, weight_decay=5e-4, num_epochs=200, beta=0.01):
     """ 
     Train model using given loss function
     Loss function must have the following structure:
