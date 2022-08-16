@@ -34,7 +34,7 @@ mu = 0.7
 metrics = []
 for seed in range(4):
     for model_name in ('gcn', 'gat'):
-        for alpha in  [.1, .2, .3, .4, .5, .6, .7, .8, .9, 1]:
+        for alpha in  [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]:
             data = set_reg_mask(data, int(alpha*data.x.shape[0]))
             loss_fn = make_preg_ce_ce(mu, a_hat)
             torch.manual_seed(1)
