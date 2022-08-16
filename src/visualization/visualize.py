@@ -166,7 +166,7 @@ def viz_swipe_preg_on_unmask_preg_ratio():
 
 
 
-def viz_swipe_preg_on_unmask_preg_ratio():
+def viz_swipe_preg_and_lapreg_on_mu():
     csv_path = 'reports/swipe_preg_and_lapreg_on_mu.csv'
     df = pd.read_csv(csv_path)
     seeds = df['seed'].unique()
@@ -286,3 +286,4 @@ if __name__ == '__main__':
     viz_swipe_preg_on_unmask_preg_ratio()
     viz_swipe_preg_on_mu_and_neurs_acc()
     viz_swipe_preg_on_mu_and_neurs_icd()
+    viz_swipe_preg_and_lapreg_on_mu()
