@@ -19,7 +19,7 @@ def acc(model, data):
     return acc_train, acc_val, acc_test
 
 
-def icd_apolline_1(model, data):
+def icd_apolline_0(model, data):
     model.eval()
     # out = model(data)[0][data.train_mask]
     Z = model(data)[data.test_mask]

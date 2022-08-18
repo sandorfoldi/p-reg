@@ -14,6 +14,7 @@ from src.models.gcn import GCN1
 
 from src.models.reg import compute_a_hat
 from src.models.reg import make_l_abdul
+from src.models.reg import make_preg_ce_ce
 
 from src.models.evaluate_model import acc
 from src.models.evaluate_model import icd_apolline_1
@@ -42,8 +43,8 @@ for seed in range(2):
         
         torch.manual_seed(seed)
 
-        loss_fn = make_l_abdul(mu, a_hat)
-
+        loss_fn = make_preg_ce_ce(mu, a_hat)
+        
         model = GCN1(
             num_node_features=dataset.num_node_features,
             num_classes=dataset.num_classes,).to(device)
