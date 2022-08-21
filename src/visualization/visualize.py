@@ -192,23 +192,34 @@ def viz_swipe_preg_and_lapreg_on_mu():
     
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
 
-    plt.errorbar(mus, acc_gcn_means, fmt='r', yerr=3*acc_gcn_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GCN - PREG')
+    """
+    plt.errorbar(mus, acc_gcn_means, fmt='-or', yerr=3*acc_gcn_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GCN - PREG')
 
-    plt.errorbar(mus, acc_gat_means, fmt='b', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GAT - PREG')
+    plt.errorbar(mus, acc_gat_means, fmt='-ob', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GAT - PREG')
 
-    plt.errorbar(mus, acc_gcn_lap_means, fmt='--r', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GCN - LAPLOSS')
+    plt.errorbar(mus, acc_gcn_lap_means, fmt='-^r', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GCN - LAPLOSS')
 
-    plt.errorbar(mus, acc_gat_lap_means, fmt='--b', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GAT - LAPLOSS')
+    plt.errorbar(mus, acc_gat_lap_means, fmt='-^b', yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GAT - LAPLOSS')
+    """
+    
+    plt.plot(mus, [acc_gcn_means[0]]*len(mus), '--b')
+    # plt.plot(mus, [acc_gat_means[0]]*len(mus), '--r', label='GAT')
+    
+    plt.plot(mus, acc_gcn_lap_means, '-^b', label='GCN - Lap-reg')
+    # plt.plot(mus, acc_gat_lap_means, '-^r', label='GAT - Lap-reg')
 
-    """ax.set(
-        title='Relation between number of nodes used for regularization and accuracy',
-        xlim=(0,1),
-        # ylim=(0, 1), 
-        xlabel='No. training nodes', 
+    # plt.plot(mus, acc_gcn_means, '-ob', label='GCN - P-reg')
+    # plt.plot(mus, acc_gat_means, '-or', label='GAT - P-reg')
+    
+    ax.set(
+        # title='Relation between number of nodes used for regularization and accuracy',
+        xlim=(0, .8),
+        ylim=(0.4, 1), 
+        xlabel='Regularization factor $\mu$', 
         ylabel='Test accuracy',
-        xticks=np.linspace(0, 1, 11),
+        xticks=np.linspace(0, 0.8, 9),
         # yticks=np.linspace(0, 1, 6),
-        )"""
+        )
     ax.grid()
     ax.legend(loc='lower left')
     plt.tight_layout()
@@ -219,7 +230,7 @@ def viz_swipe_preg_and_lapreg_on_mu():
 def _add_colorbar(im, fig, ax):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
-    fig.colorbar(im, cax=cax, orientation='vertical')
+    fig.colorbar(im, cax=cax, orientation='vertical', cmap='inferno')
 
 
 
@@ -298,7 +309,7 @@ def viz_swipe_preg_on_mu_and_neurs(field):
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
-    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, cmap='inferno')
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
     ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])

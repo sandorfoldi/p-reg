@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from src.models.gcn import GCN1
 from src.models.gat import GAT
+from src.models.dense import NN1
 
 from src.models.train_model import random_splits
 from src.models.train_model import train_with_loss
@@ -15,7 +16,10 @@ from src.models.reg import make_preg_ce_ce
 from src.models.reg import make_lap_loss_ce
 
 from src.models.evaluate_model import acc
-from src.models.evaluate_model import icd_apolline_1
+from src.models.evaluate_model import icd_saf_0
+from src.models.evaluate_model import icd_saf_1
+from src.models.evaluate_model import icd_saf_2
+from src.models.evaluate_model import icd_saf_3
 
 import torch
 import torch_geometric.transforms as T
@@ -40,7 +44,7 @@ print('-------------------------------------------------------------')
 metrics = []
 for seed in range(4):
     for loss_fn_name in ['preg_loss', 'lap_loss',]:
-        for model_name in ['gcn', 'gat']:
+        for model_name in ['gcn', 'mlp']:
             for mu in range(9):
                 torch.manual_seed(1)
 
@@ -60,7 +64,12 @@ for seed in range(4):
 
                 elif model_name == 'gat':
                     model = GAT(dataset=dataset).to(device)
-                    
+                
+                elif model_name == 'mlp':
+                    model = NN1(
+                        num_node_features=dataset.num_node_features,
+                        num_classes=dataset.num_classes).to(device)
+
                 else:
                     raise(Exception('Not Implemented'))
 
@@ -68,7 +77,10 @@ for seed in range(4):
 
 
                 train_acc, val_acc, test_acc = acc(model, data)
-                icd = icd_apolline_1(model, data)
+                icd0 = icd_saf_0(model, data)[2]
+                icd1 = icd_saf_1(model, data)[2]
+                icd2 = icd_saf_2(model, data)[2]
+                icd3 = icd_saf_3(model, data)[2]
 
                 metrics.append({
                     'seed': seed,
@@ -78,7 +90,10 @@ for seed in range(4):
                     'train_acc': np.round(train_acc,4), 
                     'val_acc': np.round(val_acc,4), 
                     'test_acc': np.round(test_acc,4),
-                    'icd': np.round(icd, 4),
+                    'icd0': np.round(icd0, 4),
+                    'icd1': np.round(icd1, 4),
+                    'icd2': np.round(icd2, 4),
+                    'icd3': np.round(icd3, 4),
                     })
 
                 print(metrics[-1])
