@@ -98,7 +98,6 @@ def icd_apolline_2(model, data):
     model.eval()
     icds = []
     for mask in [data.train_mask, data.val_mask, data.test_mask]:
-        print('----')
         with torch.no_grad():
             Z = model(data)[mask]
         out = F.log_softmax(Z, dim=1)
@@ -127,17 +126,9 @@ def icd_apolline_2(model, data):
             for i in Sk:
                 zi = out[i]
                 zi = torch.nn.Softmax(dim=0)(zi)
-                # print(f'apo2 -> softmax(out) = {zi}')
-                # print(f'apo2 -> zi = {zi}')
-                # print(f'apo2 -> ck.shape = {ck.shape}')
                 omega = torch.linalg.norm(zi-ck)**0.5
-                # print(f'apo2 -> omega = {omega}')
                 w += omega
-            break
-            # print(f'apo3 -> w = {w}')
-        print(f'apo w: {w}')
         icds.append((w/N).item())
-        break
         
     return icds
 
@@ -299,7 +290,6 @@ def icd_saf_1(model, data):
     model.eval()
     icds = []
     for mask in [data.train_mask, data.val_mask, data.test_mask]:
-        print('---')
         with torch.no_grad():
             Z = model(data)[mask]
         out = F.log_softmax(Z, dim=1)
@@ -312,22 +302,12 @@ def icd_saf_1(model, data):
         for class_id in class_ids:
             Sk = (pred == class_id)
             ck = torch.nn.Softmax(dim=1)(out)[Sk].mean(dim=0)
-            # print(f'saf1 -> ck = {ck}')
             zi = torch.nn.Softmax(dim=1)(out)[Sk]
-            # print(f'saf1 -> softmax(out) = \n{_}')
-            
-            # print(f'saf1 -> zi = {zi}')
-            # print(f'saf1 -> ck.shape = {ck.shape}')
-
 
             omega = torch.linalg.norm((zi-ck), dim=1)**.5
-            # print(f'saf1 -> omega = {omega}')
             omega = omega.sum()
-            # print(f'saf1 -> omega_per_class = {omega}')
             w += omega
-            break
-        print(f'saf w {w}')
+
         icds.append((w/N).item())
-        break
     return icds
     
