@@ -17,8 +17,11 @@ from src.models.reg import make_l_abdul
 from src.models.reg import make_preg_ce_ce
 
 from src.models.evaluate_model import acc
-from src.models.evaluate_model import icd_apolline_1
-from src.models.evaluate_model import icd_saf_0
+
+from src.models.evaluate_model import icd_saf_1
+from src.models.evaluate_model import icd_saf_2
+from src.models.evaluate_model import icd_saf_3
+from src.models.evaluate_model import icd_saf_4
 
 from src.visualization.visualize import gen_fig
 
@@ -54,7 +57,10 @@ for seed in range(1):
 
         train_acc, val_acc, test_acc = acc(model, data)
         # icd = icd_apolline_1(model, data)
-        icd = icd_saf_0(model, data)[2]
+        icd1 = icd_saf_1(model, data)[2]
+        icd2 = icd_saf_2(model, data)[2]
+        icd3 = icd_saf_3(model, data)[2]
+        icd4 = icd_saf_4(model, data)[2]
 
         metrics.append({
             'mu': mu, 
@@ -62,7 +68,10 @@ for seed in range(1):
             'train_acc': np.round(train_acc, 4), 
             'val_acc': np.round(val_acc, 4), 
             'test_acc': np.round(test_acc, 4),
-            'icd': np.round(icd, 4),
+            'icd1': np.round(icd1, 4),
+            'icd2': np.round(icd2, 4),
+            'icd3': np.round(icd3, 4),
+            'icd4': np.round(icd4, 4),
             })
 
         print(metrics[-1])
@@ -73,7 +82,7 @@ df.to_csv('reports/swipe_preg_on_mu.csv')
 
 
 fig, ax = plt.subplots()
-ax.plot(df['mu'], df['icd'], '-r')
+ax.plot(df['mu'], df['icd1'], '-r')
 ax.set(xlabel='Regularization factor $\mu$', ylabel='Intra class distnce')
 plt.savefig('reports/swipe_preg_on_mu_icd.png', dpi=300)
 

@@ -19,7 +19,7 @@ def viz_swipe_preg_on_mu_icd():
     df = pd.read_csv(csv_path)
     seeds = df['seed'].unique()
 
-    arr = np.array([df[df['seed'] == seed]['icd'] for seed in seeds])
+    arr = np.array([df[df['seed'] == seed]['icd4'] for seed in seeds])
     icd_means = arr.mean(axis=0)
     icd_vars = arr.var(axis=0)
 
