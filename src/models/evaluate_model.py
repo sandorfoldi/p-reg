@@ -91,6 +91,193 @@ def icd_apolline_1(model, data):
     return (w/N).item()
 
 
+def icd_apolline_2(model, data):
+    """
+    Same as icd_apolline_1 but for all train valid and test masks
+    """
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        print('----')
+        with torch.no_grad():
+            Z = model(data)[mask]
+        out = F.log_softmax(Z, dim=1)
+        pred = out.argmax(dim=1)
+
+        N = len(pred)
+
+        w=0
+        class_ids = np.unique(data.y)
+        for class_id in class_ids:
+            
+            # Sk is the list of indeces of nodes that belong to class k
+            Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+
+            # compute ck
+            ck = torch.Tensor(np.zeros(len(class_ids)))
+
+            for i in Sk:
+                zi = out[i]
+                zi = torch.nn.Softmax(dim=0)(zi)
+                ck += zi
+            ck = ck/len(Sk)
+            # print(f'apo2 -> ck = {ck}')
+
+            # compute icd per class
+            for i in Sk:
+                zi = out[i]
+                zi = torch.nn.Softmax(dim=0)(zi)
+                # print(f'apo2 -> softmax(out) = {zi}')
+                # print(f'apo2 -> zi = {zi}')
+                # print(f'apo2 -> ck.shape = {ck.shape}')
+                omega = torch.linalg.norm(zi-ck)**0.5
+                # print(f'apo2 -> omega = {omega}')
+                w += omega
+            break
+            # print(f'apo3 -> w = {w}')
+        print(f'apo w: {w}')
+        icds.append((w/N).item())
+        break
+        
+    return icds
+
+
+def icd_apolline_3(model, data):
+    """
+    This implementation does not take the log softmax of Z when computing icds.
+    """
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        with torch.no_grad():
+            Z = model(data)[mask]
+        out = F.log_softmax(Z, dim=1)
+        pred = out.argmax(dim=1)
+
+        N = len(pred)
+
+        w=0
+        class_ids = np.unique(data.y)
+        for class_id in class_ids:
+            
+            # Sk is the list of indeces of nodes that belong to class k
+            Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+
+            # compute ck
+            ck = torch.Tensor(np.zeros(len(class_ids)))
+
+            for i in Sk:
+                # zi = out[i]
+                # zi = torch.nn.Softmax(dim=0)(zi)
+                zi = Z[i]
+                ck += zi
+            ck = ck/len(Sk)
+
+            # compute icd per class
+            for i in Sk:
+                # zi = out[i]
+                # zi = torch.nn.Softmax(dim=0)(zi)
+                zi = Z[i]
+                w += torch.linalg.norm(zi-ck)**0.5
+            
+        icds.append((w/N).item())
+        
+    return icds
+
+
+
+
+def icd_apolline_4(model, data):
+    """
+    This implementation computed icds using softmax(log_softmax(z))
+    But on all nodes that belong to class k
+    """
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        with torch.no_grad():
+            Z = model(data)[mask]
+        out = F.log_softmax(Z, dim=1)
+        pred = out.argmax(dim=1)
+
+        N = len(pred)
+
+        w=0
+        class_ids = np.unique(data.y)
+        for class_id in class_ids:
+            
+            # Sk is the list of indeces of nodes that belong to class k
+            # Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+            Sk = (data.y == class_id).nonzero(as_tuple=True)[0]
+
+            # compute ck
+            ck = torch.Tensor(np.zeros(len(class_ids)))
+
+            for i in Sk:
+                zi = out[i]
+                zi = torch.nn.Softmax(dim=0)(zi)
+                ck += zi
+            ck = ck/len(Sk)
+
+            # compute icd per class
+            for i in Sk:
+                zi = out[i]
+                zi = torch.nn.Softmax(dim=0)(zi)
+                w += torch.linalg.norm(zi-ck)**0.5
+            
+        icds.append((w/N).item())
+        
+    return icds
+
+
+
+def icd_apolline_5(model, data):
+    """
+    This implementation computes icds on z
+    And on all nodes that belong to class k
+    """
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        with torch.no_grad():
+            Z = model(data)[mask]
+        out = F.log_softmax(Z, dim=1)
+        pred = out.argmax(dim=1)
+
+        N = len(pred)
+
+        w=0
+        class_ids = np.unique(data.y)
+        for class_id in class_ids:
+            
+            # Sk is the list of indeces of nodes that belong to class k
+            # Sk = (pred == class_id).nonzero(as_tuple=True)[0]
+            Sk = (data.y == class_id).nonzero(as_tuple=True)[0]
+
+            # compute ck
+            ck = torch.Tensor(np.zeros(len(class_ids)))
+
+            for i in Sk:
+                # zi = out[i]
+                # zi = torch.nn.Softmax(dim=0)(zi)
+                zi = Z[i]
+
+                ck += zi
+            ck = ck/len(Sk)
+
+            # compute icd per class
+            for i in Sk:
+                # zi = out[i]
+                # zi = torch.nn.Softmax(dim=0)(zi)
+                zi = Z[i]
+
+                w += torch.linalg.norm(zi-ck)**0.5
+            
+        icds.append((w/N).item())
+        
+    return icds
+
+
 def icd_saf_0(model, data):
     model.eval()
     with torch.no_grad():
@@ -105,3 +292,42 @@ def icd_saf_0(model, data):
             
             icds.append(np.array(icd_per_class).mean())
         return icds
+
+
+def icd_saf_1(model, data):
+    # different implementation of icd_apolline_2
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        print('---')
+        with torch.no_grad():
+            Z = model(data)[mask]
+        out = F.log_softmax(Z, dim=1)
+        pred = out.argmax(dim=1)
+
+        N = len(pred)
+
+        w=0
+        class_ids = np.unique(data.y)
+        for class_id in class_ids:
+            Sk = (pred == class_id)
+            ck = torch.nn.Softmax(dim=1)(out)[Sk].mean(dim=0)
+            # print(f'saf1 -> ck = {ck}')
+            zi = torch.nn.Softmax(dim=1)(out)[Sk]
+            # print(f'saf1 -> softmax(out) = \n{_}')
+            
+            # print(f'saf1 -> zi = {zi}')
+            # print(f'saf1 -> ck.shape = {ck.shape}')
+
+
+            omega = torch.linalg.norm((zi-ck), dim=1)**.5
+            # print(f'saf1 -> omega = {omega}')
+            omega = omega.sum()
+            # print(f'saf1 -> omega_per_class = {omega}')
+            w += omega
+            break
+        print(f'saf w {w}')
+        icds.append((w/N).item())
+        break
+    return icds
+    
