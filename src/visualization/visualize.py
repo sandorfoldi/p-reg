@@ -28,7 +28,7 @@ def viz_swipe_preg_on_mu_icd():
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
     # ax.set_title('Intra class distance')
     ax.set(
-        title='Intra class distance',
+        # title='Intra class distance',
         xlabel='Regularization factor ($\mu$)',
         ylabel='Intra class distance ($\omega$)',
         xlim=(0, 2),
@@ -67,7 +67,7 @@ def viz_swipe_preg_on_mu_acc():
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
     # ax.set_title('Intra class distance')
     ax.set(
-        title='Accuracy',
+        # title='Accuracy',
         xlabel='Regularization factor ($\mu$)',
         ylabel='Accuracy',
         xlim=(0, 2),
@@ -113,7 +113,7 @@ def viz_swipe_preg_on_train_size():
 
 
     ax.set(
-        title='Relation between training nodes and accuracy',
+        # title='Relation between training nodes and accuracy',
         xlim=(0,100),
         ylim=(0, 1), 
         xlabel='No. training nodes', 
@@ -150,7 +150,7 @@ def viz_swipe_preg_on_unmask_preg_ratio():
     plt.errorbar(unmask_preg_ratios, acc_gat_means, yerr=3*acc_gat_vars**.5, elinewidth=2, capsize=4, capthick=2, label='GAT')
 
     ax.set(
-        title='Relation between number of nodes used for regularization and accuracy',
+        # title='Relation between number of nodes used for regularization and accuracy',
         xlim=(0,1),
         # ylim=(0, 1), 
         xlabel='No. training nodes', 
@@ -236,20 +236,21 @@ def viz_swipe_preg_on_mu_and_neurs_icd():
             # icd0 = list(map(lambda l: l.lstrip('[').rstrip(']').split(' '), df['icd0']))
             # icd0 = list(map(lambda l: float(l), icd0))
 
-            arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)]['icd0'].mean()
+            arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)]['icd1'].mean()
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
     mus = df[(df['seed'] == 0) & (df['hidden_channels'] == 1)]['mu']
-    hidden_channels = df[(df['seed'] == 0) & (df['mu'] == 0)]
-    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    hidden_channels = df[(df['seed'] == 0) & (df['mu'] == 0)]['hidden_channels']
+    # im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    im = ax.pcolormesh(mus, hidden_channels, arr, )
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
     ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])
     _add_colorbar(im, fig, ax)
 
     ax.set(
-        title='Effects of changing model complexity and the amont of applied regularization jointly',
+        # title='Effects of changing model complexity and the amont of applied regularization jointly',
         xlabel='Regularization factor', 
         ylabel='No. neurons in hidden layer')
     ax.legend()
@@ -277,11 +278,38 @@ def viz_swipe_preg_on_mu_and_neurs_acc():
     _add_colorbar(im, fig, ax)
 
     ax.set(
-        title='Effects of changing model complexity and the amont of applied regularization jointly',
+        # title='Effects of changing model complexity and the amont of applied regularization jointly',
         xlabel='Regularization factor', 
         ylabel='No. neurons in hidden layer')
     ax.legend()
     plt.savefig('reports/swipe_preg_on_mu_and_neurs_acc.png', dpi=300)
+
+
+def viz_swipe_preg_on_mu_and_neurs(field):
+    df = pd.read_csv('reports/swipe_preg_on_mu_and_neurs.csv')
+    # df['icd'] = df['icd'].apply(lambda l: float(l.split('(')[-1].split(')')[0]))
+    # ridiculously slow implementation, but I don't want to figure this out now
+    arr = np.zeros((df['hidden_channels'].unique().shape[0], df['mu'].unique().shape[0]))
+    for ind_i, i in enumerate(df['hidden_channels'].unique()):
+        for ind_j, j in enumerate(df['mu'].unique()):
+            # print((df['hidden_channels'] == i) & (df['mu'] == j))
+            # print(df[(df['hidden_channels'] == i) & (df['mu'] == j)]['test_acc'])
+            arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)][field].mean()
+
+    # arr = np.nan_to_num(arr)
+    fig, ax = plt.subplots()
+    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    ax.set_yscale('log')
+    ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
+    ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])
+    _add_colorbar(im, fig, ax)
+
+    ax.set(
+        # title='Effects of changing model complexity and the amont of applied regularization jointly',
+        xlabel='Regularization factor', 
+        ylabel='No. neurons in hidden layer')
+    # ax.legend()
+    plt.savefig('reports/swipe_preg_on_mu_and_neurs_' + field + '.png', dpi=300)
 
 
 if __name__ == '__main__':
@@ -289,6 +317,11 @@ if __name__ == '__main__':
     viz_swipe_preg_on_mu_acc()
     viz_swipe_preg_on_train_size()
     viz_swipe_preg_on_unmask_preg_ratio()
-    viz_swipe_preg_on_mu_and_neurs_acc()
-    viz_swipe_preg_on_mu_and_neurs_icd()
+    # viz_swipe_preg_on_mu_and_neurs_acc()
+    # viz_swipe_preg_on_mu_and_neurs_icd()
+    viz_swipe_preg_on_mu_and_neurs('test_acc')
+    viz_swipe_preg_on_mu_and_neurs('icd0')
+    viz_swipe_preg_on_mu_and_neurs('icd1')
+    viz_swipe_preg_on_mu_and_neurs('icd2')
+    viz_swipe_preg_on_mu_and_neurs('icd3')
     viz_swipe_preg_and_lapreg_on_mu()
