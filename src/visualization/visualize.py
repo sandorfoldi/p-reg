@@ -233,8 +233,8 @@ def viz_swipe_preg_on_mu_and_neurs_icd():
         for ind_j, j in enumerate(df['mu'].unique()):
             # print((df['hidden_channels'] == i) & (df['mu'] == j))
             # print(df[(df['hidden_channels'] == i) & (df['mu'] == j)]['test_acc'])
-            icd0 = list(map(lambda l: l.lstrip('[').rstrip(']').split(' '), df['icd0']))
-            icd0 = list(map(lambda l: float(l), icd0))
+            # icd0 = list(map(lambda l: l.lstrip('[').rstrip(']').split(' '), df['icd0']))
+            # icd0 = list(map(lambda l: float(l), icd0))
 
             arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)]['icd0'].mean()
 

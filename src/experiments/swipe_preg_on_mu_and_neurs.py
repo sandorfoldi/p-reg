@@ -55,10 +55,10 @@ for seed in range(4):
 
             train_acc, val_acc, test_acc = acc(model, data)
 
-            icd0 = icd_saf_0(model, data)
-            icd1 = icd_saf_1(model, data)
-            icd2 = icd_saf_2(model, data)
-            icd3 = icd_saf_3(model, data)
+            icd0 = icd_saf_0(model, data)[2]
+            icd1 = icd_saf_1(model, data)[2]
+            icd2 = icd_saf_2(model, data)[2]
+            icd3 = icd_saf_3(model, data)[2]
             
             metrics.append({
                 'seed': seed, 
