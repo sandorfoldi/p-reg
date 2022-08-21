@@ -19,7 +19,7 @@ def viz_swipe_preg_on_mu_icd():
     df = pd.read_csv(csv_path)
     seeds = df['seed'].unique()
 
-    arr = np.array([df[df['seed'] == seed]['icd4'] for seed in seeds])
+    arr = np.array([df[df['seed'] == seed]['icd0'] for seed in seeds])
     icd_means = arr.mean(axis=0)
     icd_vars = arr.var(axis=0)
 
@@ -233,13 +233,16 @@ def viz_swipe_preg_on_mu_and_neurs_icd():
         for ind_j, j in enumerate(df['mu'].unique()):
             # print((df['hidden_channels'] == i) & (df['mu'] == j))
             # print(df[(df['hidden_channels'] == i) & (df['mu'] == j)]['test_acc'])
-            arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)]['icd'].mean()
+            icd0 = list(map(lambda l: l.lstrip('[').rstrip(']').split(' '), df['icd0']))
+            icd0 = list(map(lambda l: float(l), icd0))
+
+            arr[ind_i,ind_j] = df[(df['hidden_channels'] == i) & (df['mu'] == j)]['icd0'].mean()
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
     mus = df[(df['seed'] == 0) & (df['hidden_channels'] == 1)]['mu']
     hidden_channels = df[(df['seed'] == 0) & (df['mu'] == 0)]
-    im = ax.pcolormesh(list(map(lambda l: 2*l, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
     ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])
@@ -267,7 +270,7 @@ def viz_swipe_preg_on_mu_and_neurs_acc():
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
-    im = ax.pcolormesh(list(map(lambda l: 2*l, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
+    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
     ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])

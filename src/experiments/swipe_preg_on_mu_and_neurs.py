@@ -13,7 +13,10 @@ from src.models.reg import compute_a_hat
 from src.models.reg import make_preg_ce_ce
 
 from src.models.evaluate_model import acc
-from src.models.evaluate_model import icd_apolline_1
+from src.models.evaluate_model import icd_saf_0
+from src.models.evaluate_model import icd_saf_1
+from src.models.evaluate_model import icd_saf_2
+from src.models.evaluate_model import icd_saf_3
 
 import torch
 
@@ -40,7 +43,8 @@ print('-------------------------------------------------------------')
 metrics = []
 for seed in range(4):
     for hidden_channels in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
-        for mu in range(0,41, 2):
+        for mu in range(0,21, 2):
+            mu /= 10
             torch.manual_seed(seed)
 
             loss_fn = make_preg_ce_ce(mu, A_hat)
@@ -51,7 +55,10 @@ for seed in range(4):
 
             train_acc, val_acc, test_acc = acc(model, data)
 
-            icd = icd_apolline_1(model, data)
+            icd0 = icd_saf_0(model, data)
+            icd1 = icd_saf_1(model, data)
+            icd2 = icd_saf_2(model, data)
+            icd3 = icd_saf_3(model, data)
             
             metrics.append({
                 'seed': seed, 
@@ -60,7 +67,10 @@ for seed in range(4):
                 'train_acc': np.round(train_acc,4), 
                 'val_acc': np.round(val_acc,4), 
                 'test_acc': np.round(test_acc,4),
-                'icd': np.round(icd, 4),
+                'icd0': np.round(icd0, 4),
+                'icd1': np.round(icd1, 4),
+                'icd2': np.round(icd2, 4),
+                'icd3': np.round(icd3, 4),
                 })
             
             print(metrics[-1])
