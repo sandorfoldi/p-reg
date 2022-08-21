@@ -29,25 +29,23 @@ def icd_saf_0(model, data):
 
         pred = Z.argmax(dim=1)
 
-        N = len(pred)
-
-        w=0
+        omega = []
         for class_id in np.unique(data.y):
             Sk = (pred == class_id)
             
             zi = torch.nn.Softmax(dim=1)(Z)[Sk]
             ck = zi.mean(dim=0)
 
-            omega = torch.linalg.norm((zi-ck), dim=1)**.5
-            omega = omega.sum()
-            w += omega
+            omega.append(torch.linalg.norm((zi-ck), dim=1)**.5)
 
-        icds.append((w/N).item())
+        omega = torch.concat(omega).mean()
+        icds.append(omega.item())
     return icds
 
 
 def icd_saf_1(model, data):
     # computing icd over ground truth classes and not predicted classes
+    # only taking softmax once
     model.eval()
     icds = []
     for mask in [data.train_mask, data.val_mask, data.test_mask]:
@@ -56,19 +54,16 @@ def icd_saf_1(model, data):
 
         pred = Z.argmax(dim=1)
 
-        N = len(pred)
-
-        w=0
-
+        omega = []
         for class_id in np.unique(data.y):
             Sk = (data.y[mask] == class_id)
-
+            
             zi = torch.nn.Softmax(dim=1)(Z)[Sk]
             ck = zi.mean(dim=0)
 
-            omega = torch.linalg.norm((zi-ck), dim=1)**.5
-            omega = omega.sum()
-            w += omega
+            omega.append(torch.linalg.norm((zi-ck), dim=1)**.5)
 
-        icds.append((w/N).item())
+        omega = torch.concat(omega).mean()
+        icds.append(omega.item())
     return icds
+
