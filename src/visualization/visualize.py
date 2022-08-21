@@ -32,9 +32,9 @@ def viz_swipe_preg_on_mu_icd():
         xlabel='Regularization factor ($\mu$)',
         ylabel='Intra class distance ($\omega$)',
         xlim=(0, 2),
-        ylim=(0.26, 0.48),
+        # ylim=(0.26, 0.48),
         xticks=np.linspace(0, 2, num=11),
-        yticks=np.linspace(0.26, 0.48, 12)
+        # yticks=np.linspace(0.26, 0.48, 12)
         )
     ax.grid()
     plt.tight_layout()
@@ -237,6 +237,8 @@ def viz_swipe_preg_on_mu_and_neurs_icd():
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
+    mus = df[(df['seed'] == 0) & (df['hidden_channels'] == 1)]['mu']
+    hidden_channels = df[(df['seed'] == 0) & (df['mu'] == 0)]
     im = ax.pcolormesh(list(map(lambda l: 2*l, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, )
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])

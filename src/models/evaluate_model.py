@@ -89,3 +89,19 @@ def icd_apolline_1(model, data):
         #print(clk, ck, w)
 
     return (w/N).item()
+
+
+def icd_saf_0(model, data):
+    model.eval()
+    with torch.no_grad():
+        icds = []
+        for mask in [data.train_mask, data.val_mask, data.test_mask]:
+            Z = model(data)[mask]
+            icd_per_class = [] # intra class distances
+            for c in data.y.unique().numpy():
+                # s_k = Z[data.y[mask] == c]
+                s_k = torch.nn.Softmax(dim=0)(Z[data.y[mask] == c])
+                icd_per_class.append(s_k.var())
+            
+            icds.append(np.array(icd_per_class).mean())
+        return icds

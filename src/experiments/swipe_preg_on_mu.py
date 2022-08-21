@@ -18,6 +18,7 @@ from src.models.reg import make_preg_ce_ce
 
 from src.models.evaluate_model import acc
 from src.models.evaluate_model import icd_apolline_1
+from src.models.evaluate_model import icd_saf_0
 
 from src.visualization.visualize import gen_fig
 
@@ -30,7 +31,7 @@ data.reg_mask = torch.ones_like(data.train_mask, dtype=torch.bool)
 a_hat = compute_a_hat(data)
 
 metrics = []
-for seed in range(2):
+for seed in range(1):
     for mu in range(0, 21, 2):
         if mu == 0 and seed == 0:    
             print('-------------------------------------------------------------')
@@ -52,7 +53,8 @@ for seed in range(2):
         model = train_with_loss(model, data, loss_fn)
 
         train_acc, val_acc, test_acc = acc(model, data)
-        icd = icd_apolline_1(model, data)
+        # icd = icd_apolline_1(model, data)
+        icd = icd_saf_0(model, data)[2]
 
         metrics.append({
             'mu': mu, 
