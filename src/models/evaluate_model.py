@@ -67,3 +67,50 @@ def icd_saf_1(model, data):
         icds.append(omega.item())
     return icds
 
+
+def icd_saf_2(model, data):
+    # not taking softmax at all
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        with torch.no_grad():
+            Z = model(data)[mask]
+
+        pred = Z.argmax(dim=1)
+
+        omega = []
+        for class_id in np.unique(data.y):
+            Sk = (pred == class_id)
+            
+            zi = Z[Sk]
+            ck = zi.mean(dim=0)
+
+            omega.append(torch.linalg.norm((zi-ck), dim=1)**.5)
+
+        omega = torch.concat(omega).mean()
+        icds.append(omega.item())
+    return icds
+
+
+def icd_saf_3(model, data):
+    # not taking softmax and computing over ground truth classes
+    model.eval()
+    icds = []
+    for mask in [data.train_mask, data.val_mask, data.test_mask]:
+        with torch.no_grad():
+            Z = model(data)[mask]
+
+        pred = Z.argmax(dim=1)
+
+        omega = []
+        for class_id in np.unique(data.y):
+            Sk = (data.y[mask] == class_id)
+            
+            zi = Z[Sk]
+            ck = zi.mean(dim=0)
+
+            omega.append(torch.linalg.norm((zi-ck), dim=1)**.5)
+
+        omega = torch.concat(omega).mean()
+        icds.append(omega.item())
+    return icds

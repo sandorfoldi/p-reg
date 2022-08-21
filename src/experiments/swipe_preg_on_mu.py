@@ -20,6 +20,8 @@ from src.models.evaluate_model import acc
 
 from src.models.evaluate_model import icd_saf_0
 from src.models.evaluate_model import icd_saf_1
+from src.models.evaluate_model import icd_saf_2
+from src.models.evaluate_model import icd_saf_3
 
 from src.visualization.visualize import gen_fig
 
@@ -57,6 +59,9 @@ for seed in range(1):
         # icd = icd_apolline_1(model, data)
         icd0 = icd_saf_0(model, data)[2]
         icd1 = icd_saf_1(model, data)[2]
+        icd2 = icd_saf_2(model, data)[2]
+        icd3 = icd_saf_3(model, data)[2]
+        
 
         metrics.append({
             'mu': mu, 
@@ -66,6 +71,8 @@ for seed in range(1):
             'test_acc': np.round(test_acc, 4),
             'icd0': np.round(icd0, 4),
             'icd1': np.round(icd1, 4),
+            'icd2': np.round(icd2, 4),
+            'icd3': np.round(icd3, 4),
             })
 
         print(metrics[-1])
