@@ -40,7 +40,7 @@ for seed in range(4):
             data.reg_mask = torch.ones_like(data.train_mask, dtype=torch.bool)
             splits = data.train_mask, data.val_mask, data.test_mask
 
-            torch.manual_seed(1)
+            torch.manual_seed(seed)
 
             if model_name == 'gcn':
                 model = GCN1(num_node_features=dataset.num_node_features,

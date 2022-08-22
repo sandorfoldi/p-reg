@@ -37,7 +37,7 @@ for seed in range(4):
         for alpha in  [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]:
             data = set_reg_mask(data, int(alpha*data.x.shape[0]))
             loss_fn = make_preg_ce_ce(mu, a_hat)
-            torch.manual_seed(1)
+            torch.manual_seed(seed)
 
             if model_name == 'gcn':
                 model = GCN1(

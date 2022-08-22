@@ -46,7 +46,7 @@ for seed in range(4):
     for loss_fn_name in ['preg_loss', 'lap_loss',]:
         for model_name in ['gcn', 'mlp']:
             for mu in range(9):
-                torch.manual_seed(1)
+                torch.manual_seed(seed)
 
                 mu = mu / 10
 
