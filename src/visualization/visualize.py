@@ -309,7 +309,7 @@ def viz_swipe_preg_on_mu_and_neurs(field):
 
     # arr = np.nan_to_num(arr)
     fig, ax = plt.subplots()
-    im = ax.pcolormesh(list(range(0,21, 2)), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, cmap='inferno')
+    im = ax.pcolormesh(np.linspace(0,2,11), [1, 2, 4, 8, 16, 32, 64, 128, 256], arr, cmap='inferno')
     ax.set_yscale('log')
     ax.set_yticks([1, 2, 4, 8, 16, 32, 64, 128, 256])
     ax.set_yticklabels([1, 2, 4, 8, 16, 32, 64, 128, 256])
